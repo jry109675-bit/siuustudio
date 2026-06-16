@@ -173,41 +173,50 @@
     const { createClient } = supabase;
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    // Auth guard with session retry.
-    (async () => {
-        try {
-            window._diagLog('Auth guard: calling getSession() #1');
-            let { data: { session }, error: e1 } = await window._sb.auth.getSession();
-            window._diagLog('Auth guard: getSession #1 result — session=' + (session ? 'YES' : 'null') + (e1 ? ' err=' + e1.message : ''));
+    // Auth guard with session retry — written without arrow functions or
+    // destructuring assignment to stay compatible with older Safari JS parsers.
+    function siuuDelay(ms) {
+        return new Promise(function(resolve) { setTimeout(resolve, ms); });
+    }
 
-            if (!session) {
-                window._diagLog('Auth guard: no session, waiting 300ms then retrying...');
-                await new Promise(r => setTimeout(r, 300));
-                let e2;
-                ({ data: { session }, error: e2 } = await window._sb.auth.getSession());
-                window._diagLog('Auth guard: getSession #2 result — session=' + (session ? 'YES' : 'null') + (e2 ? ' err=' + e2.message : ''));
-            }
+    function siuuAuthGuard() {
+        return window._sb.auth.getSession().then(function(res1) {
+            var session = res1.data.session;
+            window._diagLog('Auth guard: getSession #1 — session=' + (session ? 'YES' : 'null'));
 
-            if (!session) {
-                window._diagLog('Auth guard: still no session — redirecting to auth page');
-                window.location.replace(AUTH_PAGE);
+            if (session) {
+                window._sbUser = session.user || null;
+                window._diagLog('Auth guard: done, user=' + ((session.user && session.user.email) || 'unknown'));
                 return;
             }
 
-            window._diagLog('Auth guard: session OK, user=' + (session.user?.email || session.user?.id || 'unknown'));
-            window._sbUser = session.user ?? null;
-            window._diagLog('Auth guard: done, React should boot now');
-        } catch (e) {
+            window._diagLog('Auth guard: no session, retrying in 300ms...');
+            return siuuDelay(300).then(function() {
+                return window._sb.auth.getSession();
+            }).then(function(res2) {
+                var session2 = res2.data.session;
+                window._diagLog('Auth guard: getSession #2 — session=' + (session2 ? 'YES' : 'null'));
+                if (session2) {
+                    window._sbUser = session2.user || null;
+                    window._diagLog('Auth guard: done, user=' + ((session2.user && session2.user.email) || 'unknown'));
+                } else {
+                    window._diagLog('Auth guard: no session after retry — redirecting');
+                    window.location.replace(AUTH_PAGE);
+                }
+            });
+        }).catch(function(e) {
             window._diagLog('Auth guard: EXCEPTION — ' + e.message);
-            console.error('Auth guard error:', e);
             window.location.replace(AUTH_PAGE);
-        }
-    })();
+        });
+    }
+
+    siuuAuthGuard();
 
     // Sign-out helper called from the Header button
-    window.siuuSignOut = async () => {
-        await window._sb.auth.signOut();
-        window.location.replace(AUTH_PAGE);
+    window.siuuSignOut = function() {
+        return window._sb.auth.signOut().then(function() {
+            window.location.replace(AUTH_PAGE);
+        });
     };
 </script>
 
@@ -975,7 +984,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             console.warn  = (...a) => { _warn(...a);  push('WARN',  a); };
             console.error = (...a) => { _error(...a); push('ERROR', a); };
             // Catch unhandled promise rejections too
-            const onUnhandled = e => push('UNHANDLED', [e.reason ?? e.message ?? String(e)]);
+            const onUnhandled = function(e) { var msg = e.reason ? (e.reason.message || String(e.reason)) : (e.message || String(e)); push('UNHANDLED', [msg]); };
             window.addEventListener('unhandledrejection', onUnhandled);
             console.log('[diag] Diagnostic mode active');
             return () => {
