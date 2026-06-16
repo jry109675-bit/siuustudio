@@ -911,6 +911,39 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             })();
         }, []);
 
+        // ── DIAGNOSTIC MODE — remove once root cause is found ─────────────────
+        // Intercepts console.log/warn/error and displays them in a red on-screen
+        // banner so we can see exactly where the ban-check stalls without DevTools.
+        useEffect(() => {
+            const logs = [];
+            const diagEl = document.getElementById('diag-banner');
+            const push = (level, args) => {
+                const ts = (performance.now() / 1000).toFixed(2) + 's';
+                const msg = args.map(a => {
+                    try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
+                    catch(_) { return String(a); }
+                }).join(' ');
+                logs.push(`[${ts}][${level}] ${msg}`);
+                const preEl = document.getElementById('diag-log'); if (preEl) preEl.textContent = logs.join('\n');
+            };
+            const _log   = console.log;
+            const _warn  = console.warn;
+            const _error = console.error;
+            console.log   = (...a) => { _log(...a);   push('LOG',   a); };
+            console.warn  = (...a) => { _warn(...a);  push('WARN',  a); };
+            console.error = (...a) => { _error(...a); push('ERROR', a); };
+            // Catch unhandled promise rejections too
+            const onUnhandled = e => push('UNHANDLED', [e.reason ?? e.message ?? String(e)]);
+            window.addEventListener('unhandledrejection', onUnhandled);
+            console.log('[diag] Diagnostic mode active');
+            return () => {
+                console.log   = _log;
+                console.warn  = _warn;
+                console.error = _error;
+                window.removeEventListener('unhandledrejection', onUnhandled);
+            };
+        }, []);
+
         // On mount: run the ban-check edge function. This catches IP / device
         // fingerprint bans (tiers 5-6) even for brand-new accounts, and also
         // surfaces normal per-account bans (tiers 1-4) via the same call.
@@ -919,15 +952,24 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             const unlock = () => {
                 // Always unlock the UI and remove the pre-React loader.
                 // Nothing should ever cause a permanent black screen.
+                console.log('[ban-check] unlock() called — setting banCheckDone=true');
                 setBanCheckDone(true);
                 const loader = document.getElementById('pre-root-loader');
                 if (loader) loader.remove();
             };
             (async () => {
+                console.log('[ban-check] starting');
                 const timeout = new Promise(resolve => setTimeout(() => resolve({ timedOut: true }), 6000));
                 try {
+                    console.log('[ban-check] getting fingerprint...');
                     const fingerprint = await Promise.race([getDeviceFingerprint(), new Promise(r => setTimeout(() => r(null), 2000))]);
-                    const { data: { session } } = await window._sb.auth.getSession();
+                    console.log('[ban-check] fingerprint:', fingerprint ? 'ok' : 'null');
+
+                    console.log('[ban-check] getting session...');
+                    const { data: { session }, error: sessErr } = await window._sb.auth.getSession();
+                    console.log('[ban-check] session:', session ? 'found' : 'null', sessErr ? 'err:' + sessErr.message : '');
+
+                    console.log('[ban-check] fetching /api/ban-check...');
                     const fetchBan = fetch('/api/ban-check', {
                         method: 'POST',
                         headers: {
@@ -935,23 +977,32 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
                         },
                         body: JSON.stringify({ fingerprint }),
-                    }).then(r => r.json()).catch(() => ({ banned: false }));
+                    }).then(async r => {
+                        console.log('[ban-check] /api/ban-check response status:', r.status);
+                        const text = await r.text();
+                        console.log('[ban-check] /api/ban-check raw response:', text.slice(0, 300));
+                        try { return JSON.parse(text); } catch(e) { return { banned: false, _parseError: text.slice(0, 200) }; }
+                    }).catch(e => {
+                        console.error('[ban-check] fetch error:', e.message);
+                        return { banned: false };
+                    });
+
                     const data = await Promise.race([fetchBan, timeout]);
+                    console.log('[ban-check] result:', JSON.stringify(data));
+
                     if (data?.timedOut) {
-                        console.warn('Ban check timed out — allowing access');
+                        console.warn('[ban-check] timed out after 6s — allowing access');
                     } else {
                         if (data?.banned) setBanInfo(data);
                         else if (data?.lifted) setBanInfo(data);
                     }
                 } catch (e) {
-                    console.warn('Ban check failed:', e);
+                    console.error('[ban-check] caught error:', e.message, e.stack);
                 } finally {
                     unlock();
                 }
             })().catch(e => {
-                // Outer safety net: if the async IIFE throws before reaching finally,
-                // still unlock so the user is never stuck on a black screen.
-                console.error('Ban check outer error:', e);
+                console.error('[ban-check] outer catch:', e.message, e.stack);
                 unlock();
             });
         }, []);
@@ -3410,6 +3461,10 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
                 <div style={{ width: '40px', height: '40px', border: '3px solid rgba(249,115,22,0.2)', borderTop: '3px solid #f97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                 <p style={{ color: '#64748b', fontSize: '14px', fontFamily: 'DM Sans, sans-serif' }}>Loading SIUU Studio…</p>
+                <div id="diag-banner" style={{ position:'fixed', bottom:0, left:0, right:0, background:'#1a0000', borderTop:'2px solid #ef4444', padding:'12px', maxHeight:'40vh', overflowY:'auto', zIndex:9999 }}>
+                    <p style={{ color:'#ef4444', fontWeight:'bold', fontSize:'12px', marginBottom:'6px', fontFamily:'monospace' }}>🔴 DIAGNOSTIC MODE — remove before launch</p>
+                    <pre id="diag-log" style={{ color:'#fca5a5', fontSize:'11px', fontFamily:'monospace', whiteSpace:'pre-wrap', wordBreak:'break-all', margin:0 }}>Waiting for logs…</pre>
+                </div>
             </div>
         );
         if (banInfo) return (<><BanScreen /><LegalModal /></>);
