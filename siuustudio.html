@@ -220,8 +220,14 @@
     };
 </script>
 
-<script type="text/babel">
-    const { useState, useEffect, useRef, createContext, useContext, useCallback, useMemo } = React;
+<script type="text/babel" data-presets="react">
+    const useState = React.useState;
+    const useEffect = React.useEffect;
+    const useRef = React.useRef;
+    const createContext = React.createContext;
+    const useContext = React.useContext;
+    const useCallback = React.useCallback;
+    const useMemo = React.useMemo;
 
     // ─── Provider Config ──────────────────────────────────────────────────────────
     // Keys are never sent to the browser — set them in Netlify Environment Variables.
