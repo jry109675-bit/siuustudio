@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://siuustudio.com/</loc>
+    <lastmod>2026-04-20</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://siuustudio.com/siuu-auth.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://siuustudio.com/privacy-policy.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://siuustudio.com/terms-of-service.html</loc>
+    <lastmod>2026-04-20</lastmod>
+    <priority>0.6</priority>
+  </url>
+</urlset>

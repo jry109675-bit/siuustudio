@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIUU STUDIO — Sign In</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <!-- ── Fonts (must match main app) ────────────────────────────── -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- ── Supabase JS SDK (CDN) ──────────────────────────────────── -->
+    <!-- Replace the placeholder URL/key below with your own project credentials -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* ── Brand tokens (mirrored from siuustudio.html) ──────── */
+        :root {
+            --orange:      #f97316;
+            --orange-dim:  rgba(249,115,22,0.15);
+            --orange-glow: rgba(249,115,22,0.45);
+            --bg:          #0a0f1a;
+            --surface:     #111827;
+            --surface2:    #1a2234;
+            --border:      rgba(255,255,255,0.07);
+            --border-hi:   rgba(255,255,255,0.12);
+            --text:        #e2e8f0;
+            --muted:       #64748b;
+            --error:       #ef4444;
+            --success:     #22c55e;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        /* ── Background atmosphere ──────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% -10%, rgba(249,115,22,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(249,115,22,0.07) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Subtle grid texture */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Auth Card ───────────────────────────────────────────── */
+        .auth-wrap {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-hi);
+            border-radius: 24px;
+            padding: 36px 32px 32px;
+            box-shadow:
+                0 0 0 1px rgba(249,115,22,0.04),
+                0 24px 64px rgba(0,0,0,0.5),
+                0 0 80px rgba(249,115,22,0.04);
+            animation: cardIn 0.5s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0)  scale(1); }
+        }
+
+        /* ── Logo mark ───────────────────────────────────────────── */
+        .logo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: var(--orange);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 1.25rem;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px var(--orange-glow);
+            animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 16px var(--orange-glow); }
+            50%       { box-shadow: 0 0 32px var(--orange-glow), 0 0 56px rgba(249,115,22,0.2); }
+        }
+
+        .logo-text h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 1.05rem;
+            color: #fff; line-height: 1;
+        }
+
+        .logo-text p {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* ── Toggle tabs ─────────────────────────────────────────── */
+        .tab-row {
+            display: flex;
+            background: var(--surface2);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 9px 0;
+            border-radius: 9px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500; font-size: 0.85rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.22s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(249,115,22,0.22), rgba(249,115,22,0.1));
+            color: var(--orange);
+            box-shadow: 0 0 0 1px rgba(249,115,22,0.25);
+        }
+
+        /* ── Section heading ─────────────────────────────────────── */
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 1.35rem;
+            color: #fff;
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-sub {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        /* ── Form fields ─────────────────────────────────────────── */
+        .form-group { margin-bottom: 16px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 7px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 13px;
+            width: 15px; height: 15px;
+            color: var(--muted);
+            pointer-events: none;
+            flex-shrink: 0;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 11px 13px 11px 38px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-hi);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input::placeholder { color: #374151; }
+
+        .form-input:focus {
+            border-color: rgba(249,115,22,0.5);
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
+        }
+
+        .form-input.error {
+            border-color: rgba(239, 68, 68, 0.6);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+        }
+
+        /* Password toggle */
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            transition: color 0.15s;
+        }
+        .pw-toggle:hover { color: var(--text); }
+        .pw-toggle svg { width: 15px; height: 15px; }
+
+        /* ── Password strength ───────────────────────────────────── */
+        .pw-strength {
+            margin-top: 7px;
+            display: none;
+        }
+        .pw-strength.visible { display: block; }
+
+        .strength-bar {
+            display: flex; gap: 4px; margin-bottom: 4px;
+        }
+        .strength-seg {
+            flex: 1; height: 3px; border-radius: 2px;
+            background: rgba(255,255,255,0.08);
+            transition: background 0.3s;
+        }
+
+        .strength-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        /* ── Submit button ───────────────────────────────────────── */
+        .submit-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 13px;
+            background: var(--orange);
+            border: none;
+            border-radius: 14px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 0.9rem;
+            letter-spacing: 0.02em;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 20px rgba(249,115,22,0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #ea6c0a;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 28px rgba(249,115,22,0.5);
+        }
+
+        .submit-btn:active:not(:disabled) { transform: translateY(0); }
+
+        .submit-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        /* Spinner inside button */
+        .btn-spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Divider ─────────────────────────────────────────────── */
+        .divider {
+            display: flex; align-items: center; gap: 10px;
+            margin: 20px 0;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider span {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        /* ── OAuth button ────────────────────────────────────────── */
+        .oauth-btn {
+            width: 100%;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 11px;
+            background: rgba(26, 34, 52, 0.8);
+            border: 1px solid var(--border-hi);
+            border-radius: 13px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-weight: 500;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s;
+        }
+
+        .oauth-btn:hover {
+            border-color: rgba(255,255,255,0.2);
+            background: rgba(30, 41, 59, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .oauth-btn:active { transform: translateY(0); }
+
+        .oauth-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* ── Feedback banner ─────────────────────────────────────── */
+        .feedback {
+            display: none;
+            margin-bottom: 18px;
+            padding: 11px 14px;
+            border-radius: 11px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .feedback.visible { display: flex; align-items: flex-start; gap: 8px; }
+
+        .feedback.error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+        }
+
+        .feedback.success-msg {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            color: #86efac;
+        }
+
+        .feedback svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+
+        /* ── Forgot password link ────────────────────────────────── */
+        .forgot-link {
+            display: block;
+            text-align: right;
+            margin-top: -8px;
+            margin-bottom: 18px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .forgot-link:hover { color: var(--orange); }
+
+        /* ── Terms note ──────────────────────────────────────────── */
+        .terms-note {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .terms-note a {
+            color: var(--orange);
+            text-decoration: none;
+        }
+        .terms-note a:hover { text-decoration: underline; }
+
+        /* ── Field error text ────────────────────────────────────── */
+        .field-error {
+            font-size: 0.72rem;
+            color: #fca5a5;
+            margin-top: 5px;
+            display: none;
+        }
+        .field-error.visible { display: block; }
+
+        /* ── Panel transition ────────────────────────────────────── */
+        .auth-panel {
+            animation: panelIn 0.3s cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Scrollbar (match main app) ──────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+
+        /* ── Legal modal overlay ─────────────────────────────────── */
+        #legal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease both;
+        }
+        #legal-overlay.visible { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .legal-modal {
+            background: rgba(17, 24, 39, 0.98);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 680px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(249,115,22,0.08);
+            animation: slideUp 0.3s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .legal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 24px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+
+        .legal-header-icon {
+            width: 34px; height: 34px;
+            background: rgba(249,115,22,0.15);
+            border: 1px solid rgba(249,115,22,0.25);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .legal-header-icon svg { width: 16px; height: 16px; color: var(--orange); }
+
+        .legal-header-text { flex: 1; }
+
+        .legal-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 1.05rem;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+
+        .legal-subtitle {
+            font-size: 0.73rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .legal-step-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--orange);
+            background: rgba(249,115,22,0.12);
+            border: 1px solid rgba(249,115,22,0.2);
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-family: 'DM Sans', sans-serif;
+            letter-spacing: 0.03em;
+            flex-shrink: 0;
+        }
+
+        .legal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            line-height: 1.7;
+        }
+
+        .legal-body h2 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin: 18px 0 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .legal-body h2:first-child { margin-top: 0; }
+
+        .legal-body p { margin-bottom: 10px; }
+        .legal-body p:last-child { margin-bottom: 0; }
+
+        .legal-body strong { color: #e2e8f0; font-weight: 600; }
+
+        .legal-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .legal-body ul li {
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .legal-body ul li::before {
+            content: '–';
+            position: absolute;
+            left: 0;
+            color: var(--orange);
+        }
+
+        .legal-body .uppercase-notice {
+            text-transform: uppercase;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.75rem;
+            background: rgba(249,115,22,0.06);
+            border: 1px solid rgba(249,115,22,0.12);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+        }
+
+        .legal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+            background: rgba(10,15,26,0.5);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .legal-footer-note {
+            font-size: 0.72rem;
+            color: var(--muted);
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .ack-btn {
+            padding: 10px 20px;
+            background: var(--orange);
+            border: none;
+            border-radius: 11px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 0.82rem;
+            letter-spacing: 0.02em;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 16px rgba(249,115,22,0.3);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .ack-btn:hover:not(:disabled) {
+            background: #ea6c0a;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(249,115,22,0.45);
+        }
+
+        .ack-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .ack-btn svg { width: 14px; height: 14px; }
+
+        .close-preview-btn:hover:not(:disabled) {
+            background: rgba(255,255,255,0.14) !important;
+            transform: translateY(-1px);
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-wrap">
+    <div class="auth-card">
+
+        <!-- Logo -->
+        <div class="logo-row">
+            <div class="logo-icon">S</div>
+            <div class="logo-text">
+                <h1>SIUU STUDIO</h1>
+                <p>AI Creator Platform</p>
+            </div>
+        </div>
+
+        <!-- Login / Sign-Up toggle tabs -->
+        <div class="tab-row" role="tablist" aria-label="Authentication mode">
+            <button class="tab-btn active" id="tab-login" role="tab" aria-selected="true"
+                    aria-controls="panel-login" onclick="switchTab('login')">Sign In</button>
+            <button class="tab-btn" id="tab-signup" role="tab" aria-selected="false"
+                    aria-controls="panel-signup" onclick="switchTab('signup')">Create Account</button>
+        </div>
+
+        <!-- ─────────────────────── LOGIN PANEL ─────────────────────── -->
+        <div id="panel-login" class="auth-panel" role="tabpanel" aria-labelledby="tab-login">
+
+            <p class="section-title">Welcome back</p>
+            <p class="section-sub">Sign in to your workspace and keep creating.</p>
+
+            <!-- Global feedback -->
+            <div id="login-feedback" class="feedback" role="alert" aria-live="polite"></div>
+
+            <form id="login-form" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Email</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <input type="email" id="login-email" class="form-input"
+                               placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+                    <span class="field-error" id="login-email-err"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <input type="password" id="login-password" class="form-input"
+                               placeholder="••••••••" autocomplete="current-password" required>
+                        <button type="button" class="pw-toggle" onclick="togglePw('login-password', this)"
+                                aria-label="Show password">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="field-error" id="login-pw-err"></span>
+                </div>
+
+                <a class="forgot-link" onclick="handleForgotPassword()" tabindex="0"
+                   role="button" aria-label="Forgot password">Forgot password?</a>
+
+                <button type="submit" class="submit-btn" id="login-btn">
+                    <span id="login-btn-text">Sign In</span>
+                </button>
+            </form>
+
+            <div class="divider"><span>or continue with</span></div>
+
+            <button class="oauth-btn" onclick="handleOAuth('google')" type="button">
+                <!-- Google icon -->
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+        </div>
+
+        <!-- ────────────────────── SIGNUP PANEL ─────────────────────── -->
+        <div id="panel-signup" class="auth-panel" role="tabpanel" aria-labelledby="tab-signup"
+             style="display:none;">
+
+            <p class="section-title">Start creating</p>
+            <p class="section-sub">Your AI-powered content workspace is one step away.</p>
+
+            <!-- Global feedback -->
+            <div id="signup-feedback" class="feedback" role="alert" aria-live="polite"></div>
+
+            <form id="signup-form" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="signup-name">Display Name</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <input type="text" id="signup-name" class="form-input"
+                               placeholder="Your creator name" autocomplete="name">
+                    </div>
+                    <span class="field-error" id="signup-name-err"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signup-email">Email</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <input type="email" id="signup-email" class="form-input"
+                               placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+                    <span class="field-error" id="signup-email-err"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signup-password">Password</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <input type="password" id="signup-password" class="form-input"
+                               placeholder="Min. 8 characters" autocomplete="new-password"
+                               required oninput="updateStrength(this.value)">
+                        <button type="button" class="pw-toggle" onclick="togglePw('signup-password', this)"
+                                aria-label="Show password">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Password strength meter -->
+                    <div class="pw-strength" id="pw-strength">
+                        <div class="strength-bar">
+                            <div class="strength-seg" id="seg-1"></div>
+                            <div class="strength-seg" id="seg-2"></div>
+                            <div class="strength-seg" id="seg-3"></div>
+                            <div class="strength-seg" id="seg-4"></div>
+                        </div>
+                        <span class="strength-label" id="strength-label"></span>
+                    </div>
+                    <span class="field-error" id="signup-pw-err"></span>
+                </div>
+
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="form-label" for="signup-confirm">Confirm Password</label>
+                    <div class="input-wrap">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        <input type="password" id="signup-confirm" class="form-input"
+                               placeholder="Re-enter your password" autocomplete="new-password" required>
+                    </div>
+                    <span class="field-error" id="signup-confirm-err"></span>
+                </div>
+
+                <button type="submit" class="submit-btn" id="signup-btn">
+                    <span id="signup-btn-text">Create Account</span>
+                </button>
+            </form>
+
+            <div class="divider"><span>or sign up with</span></div>
+
+            <button class="oauth-btn" onclick="handleOAuth('google')" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <p class="terms-note">
+                By creating an account you agree to the
+                <a href="#" onclick="openLegalPreview('tos'); return false;">Terms of Service</a> and
+                <a href="#" onclick="openLegalPreview('privacy'); return false;">Privacy Policy</a>.
+            </p>
+        </div>
+
+    </div><!-- /.auth-card -->
+</div><!-- /.auth-wrap -->
+
+<!-- ─── Legal Acknowledgment Overlay ─────────────────────────────────────── -->
+<div id="legal-overlay" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
+    <div class="legal-modal">
+        <div class="legal-header">
+            <div class="legal-header-icon" id="legal-header-icon">
+                <!-- icon injected by JS -->
+            </div>
+            <div class="legal-header-text">
+                <div class="legal-title" id="legal-modal-title">Terms of Service</div>
+                <div class="legal-subtitle">Please read and acknowledge before continuing</div>
+            </div>
+            <span class="legal-step-badge" id="legal-step-badge">Step 1 of 2</span>
+        </div>
+        <div class="legal-body" id="legal-body"><!-- content injected by JS --></div>
+        <div class="legal-footer">
+            <p class="legal-footer-note" id="legal-footer-note">By clicking <strong>Acknowledge &amp; Continue</strong> you confirm you have read and agree to this document.</p>
+            <button class="ack-btn" id="ack-btn" onclick="handleAcknowledge()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                Acknowledge &amp; Continue
+            </button>
+            <button class="ack-btn close-preview-btn" id="close-preview-btn" onclick="closeLegalPreview()" style="display:none; background: rgba(255,255,255,0.08); box-shadow: none; border: 1px solid rgba(255,255,255,0.12);">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+//  STEP 1 ─ Add your Supabase credentials here
+//  Get them from: https://supabase.com → Project Settings → API
+// ════════════════════════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://wxeigysrycbrikoaaaaa.supabase.co';   // ← replace
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZWlneXNyeWNicmlrb2FhYWFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTExNjEsImV4cCI6MjA5MjM4NzE2MX0.GAaEVeMStzClI28RGflZ8m-D15xn903x18jDtW1bci8';                   // ← replace
+
+// Initialise the client (the CDN exposes `supabase` as a global)
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ════════════════════════════════════════════════════════════════════════════
+//  STEP 2 ─ After login/signup, redirect to your main app
+// ════════════════════════════════════════════════════════════════════════════
+const APP_URL = './siuustudio.html';
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Legal content
+// ────────────────────────────────────────────────────────────────────────────
+const LEGAL_CONTENT = {
+    tos: {
+        title: 'Terms of Service',
+        icon: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`,
+        html: `
+            <p><strong>Effective Date: June 16, 2026</strong></p>
+            <h2>1. Acceptance of Terms</h2>
+            <p>Welcome to SIUU Studio. By accessing or using the SIUU STUDIO - AI Creator Platform, you agree to be bound by these Terms of Service ("Terms"). These Terms are presented clearly and conspicuously prior to your use of the platform. If you do not agree to these Terms, you may not use our services.</p>
+            <h2>2. User Conduct &amp; Content Moderation</h2>
+            <p>You are responsible for the content you generate using our AI tools. You agree not to create or distribute content that is illegal, harmful, or violates the rights of others.</p>
+            
+            <h2>3. Limitation of Liability</h2>
+            <div class="uppercase-notice">To the maximum extent permitted by applicable law, SIUU Studio, its affiliates, directors, employees, and agents shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from (A) your access to or use of or inability to access or use the services; (B) any conduct or content of any third party on the services; or (C) unauthorized access, use, or alteration of your transmissions or content.</div>
+            <h2>4. Dispute Resolution and Binding Arbitration</h2>
+            <p><strong>Please read this section carefully as it affects your legal rights.</strong> Any dispute, claim, or controversy arising out of or relating to these Terms or the breach, termination, enforcement, interpretation, or validity thereof, including the determination of the scope or applicability of this agreement to arbitrate, shall be determined by binding arbitration in California before one arbitrator. Judgment on the Award may be entered in any court having jurisdiction. You agree to waive your right to a jury trial or to participate in a class action.</p>
+            <h2>5. Changes to Terms</h2>
+            <p>We reserve the right to modify these Terms at any time. We will provide conspicuous notice of major changes to these Terms on our platform.</p>
+            <h2>6. User Accounts</h2>
+            <p>To access certain features of the Service, you may be required to create an account. You agree to provide accurate and complete information and to keep your login credentials secure. You are responsible for all activities that occur under your account. SIUU Studio shall not be liable for any loss or damage arising from unauthorized use of your account.</p>
+            <h2>7. Eligibility</h2>
+            <p>You must be at least 13 years of age to use the Service. If you are under 18, you represent that you have obtained permission from a parent or legal guardian. By accessing or using the Service, you affirm that you meet these eligibility requirements.</p>
+            <h2>8. AI-Generated Content Disclaimer</h2>
+            <div class="uppercase-notice">The Service utilizes artificial intelligence to generate content. SIUU Studio does not guarantee the accuracy, reliability, or effectiveness of any generated output. All content is provided for informational and creative purposes only, and you are solely responsible for reviewing and using such content.</div>
+            <h2>9. Intellectual Property</h2>
+            <p>You retain ownership of the content you create using the Service, subject to applicable laws. By using the Service, you grant SIUU Studio a limited, non-exclusive, royalty-free license to use, process, and display such content solely for the purpose of operating, maintaining, and improving the Service. SIUU Studio does not claim ownership of your generated content.</p>
+            <h2>10. Termination</h2>
+            <p>SIUU Studio reserves the right to suspend or terminate your access to the Service at any time, with or without notice, if you violate these Terms or engage in conduct that may harm the platform or its users. Upon termination, your right to use the Service will immediately cease.</p>
+        `
+    },
+    privacy: {
+        title: 'Privacy Policy',
+        icon: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`,
+        html: `
+            <p><strong>Effective Date: June 16, 2026</strong></p>
+            <p>This Privacy Policy explains how SIUU Studio collects, uses, and discloses information about you in compliance with the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA).</p>
+            <h2>1. Information We Collect</h2>
+            <p>We collect the following categories of personal information when you use our platform:</p>
+            <ul>
+                <li><strong>Identifiers:</strong> Name, alias, IP address, and email address (if provided during account creation).</li>
+                <li><strong>Commercial Information:</strong> Projects created, tools utilized, and user engagement metrics.</li>
+                <li><strong>Internet or Network Activity:</strong> Browsing history, search history within the app, and interactions with our AI models.</li>
+                <li><strong>Sensitive Personal Information:</strong> We do not intentionally collect sensitive personal information unless explicitly provided by you in your video prompts or text inputs.</li>
+            </ul>
+            <h2>2. Usage and Sharing of Information</h2>
+            <p>We use your data primarily to provide, personalize, and improve our AI creation tools. <strong>SIUU Studio does not sell your personal information to third parties.</strong> We only share information with authorized service providers necessary to operate the platform, under strict confidentiality agreements.</p>
+            <h2>3. Your California Privacy Rights (CCPA/CPRA)</h2>
+            <ul>
+                <li><strong>Right to Know:</strong> You may request details about the categories and specific pieces of personal information we have collected about you over the past 12 months.</li>
+                <li><strong>Right to Delete:</strong> You may request the deletion of personal information we have collected from you, subject to certain legal exceptions.</li>
+                <li><strong>Right to Opt-Out:</strong> While we do not sell your data, you have the right to opt-out of the sharing of your personal information for cross-context behavioral advertising.</li>
+                <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights. You will not be denied goods or services or charged different prices.</li>
+            </ul>
+            <h2>4. How to Submit a Request</h2>
+            <p>To exercise your Right to Know, Delete, or Opt-Out, please submit a verifiable consumer request by emailing us at <strong>siuustudioprivacy@gmail.com</strong>.</p>
+            <h2>5. Accessibility</h2>
+            <p>This Privacy Policy is designed to be easily readable and accessible. We review and update this policy at least annually. If you are a user with a disability and require this policy in an alternative format, please contact us at siuustudiosupport@gmail.com.</p>
+            <h2>6. AI Technology &amp; Transparency (AB 2013 / SB 942)</h2>
+            <p>SIUU Studio's AI features are powered by the Cerebras AI API. We have not fine-tuned, retrained, or substantially modified the underlying base model. All AI behavior is guided by proprietary system instructions designed to optimize content strategy for creators.</p>
+            <p>SIUU Studio does not collect neural data, biometric data, or any data generated by the brain or nervous system. All AI-generated content produced by our tools is intended as creative suggestions only. Users remain fully responsible for reviewing, editing, and verifying any AI output before publishing or distributing it.</p>
+        `
+    }
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Legal modal state & logic
+// ────────────────────────────────────────────────────────────────────────────
+let _legalQueue   = [];   // ['tos', 'privacy'] or subset
+let _currentDoc   = null; // 'tos' | 'privacy'
+let _legalSession = null; // Supabase session held while modals are open
+
+// ── Preview mode — open a doc for reading without the acknowledge flow ────────
+function openLegalPreview(docType) {
+    const doc = LEGAL_CONTENT[docType];
+    if (!doc) return;
+
+    document.getElementById('legal-modal-title').textContent  = doc.title;
+    document.getElementById('legal-header-icon').innerHTML    = doc.icon;
+    document.getElementById('legal-body').innerHTML           = doc.html;
+    document.getElementById('legal-step-badge').style.display = 'none';
+
+    // Show close button; hide acknowledge button & footer note
+    document.getElementById('ack-btn').style.display           = 'none';
+    document.getElementById('close-preview-btn').style.display = '';
+    document.getElementById('legal-footer-note').style.display = 'none';
+
+    document.getElementById('legal-overlay').classList.add('visible');
+    document.getElementById('legal-overlay').dataset.preview = 'true';
+}
+
+function closeLegalPreview() {
+    document.getElementById('legal-overlay').classList.remove('visible');
+    document.getElementById('legal-overlay').dataset.preview = '';
+
+    // Restore defaults for the real acknowledge flow
+    document.getElementById('legal-step-badge').style.display  = '';
+    document.getElementById('ack-btn').style.display           = '';
+    document.getElementById('close-preview-btn').style.display = 'none';
+    document.getElementById('legal-footer-note').style.display = '';
+}
+
+function showLegalOverlay(session, queue) {
+    _legalSession = session;
+    _legalQueue   = [...queue];
+    _showNextDoc();
+}
+
+function _showNextDoc() {
+    if (_legalQueue.length === 0) {
+        // All acknowledged — close overlay and redirect
+        document.getElementById('legal-overlay').classList.remove('visible');
+        window.location.href = APP_URL;
+        return;
+    }
+
+    _currentDoc = _legalQueue.shift();
+    const doc   = LEGAL_CONTENT[_currentDoc];
+    const total = _currentDoc === 'tos'
+        ? (_legalQueue.length > 0 ? 2 : 1)   // tos shown, privacy may still be queued
+        : 2;                                   // privacy is always shown after tos
+    const step  = total - _legalQueue.length;
+
+    // Determine how many docs we're showing total
+    const originalTotal = (_legalQueue.length + 1); // current + remaining
+    // Actually recalculate: step badge shows position in original queue
+    document.getElementById('legal-modal-title').textContent   = doc.title;
+    document.getElementById('legal-header-icon').innerHTML      = doc.icon;
+    document.getElementById('legal-body').innerHTML             = doc.html;
+    document.getElementById('legal-step-badge').textContent     =
+        (_legalQueue.length > 0)
+            ? `Step ${step} of ${step + _legalQueue.length}`
+            : (_currentDoc === 'tos' && step === 1 && _legalQueue.length === 0)
+                ? 'Step 1 of 1'
+                : `Final Step`;
+
+    // Update button label
+    const btn = document.getElementById('ack-btn');
+    btn.disabled = false;
+    btn.innerHTML = `
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        ${_legalQueue.length > 0 ? 'Acknowledge &amp; Continue' : 'Acknowledge &amp; Enter Studio'}
+    `;
+
+    // Scroll body back to top
+    document.getElementById('legal-body').scrollTop = 0;
+
+    const overlay = document.getElementById('legal-overlay');
+    overlay.classList.add('visible');
+}
+
+async function handleAcknowledge() {
+    const btn = document.getElementById('ack-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
+
+    // Save acknowledgment flag to Supabase user metadata
+    const metaKey = _currentDoc === 'tos' ? 'tos_acknowledged' : 'privacy_acknowledged';
+    const { error } = await sb.auth.updateUser({
+        data: { [metaKey]: true, [`${metaKey}_at`]: new Date().toISOString() }
+    });
+
+    if (error) {
+        // Non-fatal — log and continue anyway
+        console.warn('Could not save acknowledgment:', error.message);
+    }
+
+    // Show next doc or redirect
+    _showNextDoc();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Post-auth: decide which docs need acknowledgment
+// ────────────────────────────────────────────────────────────────────────────
+async function checkAndShowLegalModals(session) {
+    const meta  = session?.user?.user_metadata ?? {};
+    const queue = [];
+
+    if (!meta.tos_acknowledged)     queue.push('tos');
+    if (!meta.privacy_acknowledged) queue.push('privacy');
+
+    if (queue.length > 0) {
+        showLegalOverlay(session, queue);
+    } else {
+        window.location.href = APP_URL;
+    }
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Tab switcher
+// ────────────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    const isLogin = tab === 'login';
+
+    document.getElementById('panel-login').style.display  = isLogin ? 'block' : 'none';
+    document.getElementById('panel-signup').style.display = isLogin ? 'none'  : 'block';
+
+    document.getElementById('tab-login').classList.toggle('active', isLogin);
+    document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+
+    document.getElementById('tab-login').setAttribute('aria-selected',  isLogin);
+    document.getElementById('tab-signup').setAttribute('aria-selected', !isLogin);
+
+    // Re-trigger panel animation
+    const panel = document.getElementById(isLogin ? 'panel-login' : 'panel-signup');
+    panel.classList.remove('auth-panel');
+    void panel.offsetWidth; // reflow
+    panel.classList.add('auth-panel');
+
+    clearFeedback();
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  UI helpers
+// ────────────────────────────────────────────────────────────────────────────
+function showFeedback(id, type, msg) {
+    // type = 'error' | 'success'
+    const el = document.getElementById(id);
+    const iconError = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+    const iconOk    = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    el.innerHTML  = (type === 'error' ? iconError : iconOk) + `<span>${msg}</span>`;
+    el.className  = `feedback visible ${type === 'error' ? 'error-msg' : 'success-msg'}`;
+}
+
+function clearFeedback() {
+    ['login-feedback','signup-feedback'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'feedback';
+        el.innerHTML = '';
+    });
+}
+
+function setFieldError(id, msg) {
+    const inp = document.getElementById(id.replace('-err',''));
+    const err = document.getElementById(id);
+    if (inp)  inp.classList.add('error');
+    if (err)  { err.textContent = msg; err.classList.add('visible'); }
+}
+
+function clearFieldErrors(prefix) {
+    document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => {
+        if (el.classList.contains('form-input')) el.classList.remove('error');
+        if (el.classList.contains('field-error')) { el.textContent = ''; el.classList.remove('visible'); }
+    });
+}
+
+function setLoading(btnId, textId, loading) {
+    const btn  = document.getElementById(btnId);
+    const text = document.getElementById(textId);
+    btn.disabled = loading;
+    text.innerHTML = loading
+        ? '<span class="btn-spinner"></span>'
+        : text.dataset.default || text.textContent;
+}
+
+// ── Password visibility toggle ────────────────────────────────────────────
+function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    btn.innerHTML = show
+        ? `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+               <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+           </svg>`
+        : `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+               <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+               <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+           </svg>`;
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Password-strength meter
+// ────────────────────────────────────────────────────────────────────────────
+function scorePassword(pw) {
+    let score = 0;
+    if (!pw) return 0;
+    if (pw.length >= 8)  score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    return Math.min(score, 4);
+}
+
+function updateStrength(pw) {
+    const meter = document.getElementById('pw-strength');
+    const label = document.getElementById('strength-label');
+    if (!pw) { meter.classList.remove('visible'); return; }
+    meter.classList.add('visible');
+
+    const score  = scorePassword(pw);
+    const colors = ['#ef4444','#f97316','#eab308','#22c55e'];
+    const labels = ['Too weak','Weak','Good','Strong'];
+
+    for (let i = 1; i <= 4; i++) {
+        const seg = document.getElementById(`seg-${i}`);
+        seg.style.background = i <= score ? colors[score - 1] : 'rgba(255,255,255,0.08)';
+    }
+    label.textContent  = labels[score - 1] || '';
+    label.style.color  = colors[score - 1] || 'var(--muted)';
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  LOGIN handler
+// ────────────────────────────────────────────────────────────────────────────
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearFieldErrors('login-');
+    clearFeedback();
+
+    const email = document.getElementById('login-email').value.trim();
+    const pw    = document.getElementById('login-password').value;
+    let valid   = true;
+
+    if (!email) { setFieldError('login-email-err', 'Email is required.'); valid = false; }
+    if (!pw)    { setFieldError('login-pw-err', 'Password is required.'); valid = false; }
+    if (!valid) return;
+
+    setLoading('login-btn', 'login-btn-text', true);
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+
+    setLoading('login-btn', 'login-btn-text', false);
+
+    if (error) {
+        showFeedback('login-feedback', 'error', error.message);
+        return;
+    }
+
+    // ✅ Signed in — check legal acknowledgment before redirecting
+    showFeedback('login-feedback', 'success', 'Signed in! One moment…');
+    setTimeout(() => { checkAndShowLegalModals(data.session); }, 600);
+});
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  SIGN-UP handler
+// ────────────────────────────────────────────────────────────────────────────
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearFieldErrors('signup-');
+    clearFeedback();
+
+    const name    = document.getElementById('signup-name').value.trim();
+    const email   = document.getElementById('signup-email').value.trim();
+    const pw      = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    let valid     = true;
+
+    if (!email)          { setFieldError('signup-email-err',   'Email is required.'); valid = false; }
+    if (pw.length < 8)   { setFieldError('signup-pw-err',      'Password must be at least 8 characters.'); valid = false; }
+    if (pw !== confirm)  { setFieldError('signup-confirm-err', 'Passwords do not match.'); valid = false; }
+    if (!valid) return;
+
+    setLoading('signup-btn', 'signup-btn-text', true);
+
+    const { data, error } = await sb.auth.signUp({
+        email,
+        password: pw,
+        options: {
+            data: { display_name: name || email.split('@')[0] },
+            // emailRedirectTo is where Supabase sends the user after they click the
+            // confirmation link in their inbox. Update this to your live domain.
+            emailRedirectTo: window.location.origin + '/' + APP_URL,
+        }
+    });
+
+    setLoading('signup-btn', 'signup-btn-text', false);
+
+    if (error) {
+        showFeedback('signup-feedback', 'error', error.message);
+        return;
+    }
+
+    // Supabase sends a confirmation email by default.
+    // If "Confirm email" is disabled in your Supabase Auth settings the user is
+    // signed in immediately — adjust the message below to match your setting.
+    showFeedback(
+        'signup-feedback', 'success',
+        data.user?.identities?.length === 0
+            ? 'This email is already registered. Please sign in instead.'
+            : 'Account created! Check your inbox to confirm your email.'
+    );
+});
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  OAUTH (Google) handler
+// ────────────────────────────────────────────────────────────────────────────
+async function handleOAuth(provider) {
+    clearFeedback();
+    const { error } = await sb.auth.signInWithOAuth({
+        provider,
+        options: {
+            // Supabase redirects back here after the OAuth flow completes.
+            // Make sure you add this URL to your Supabase "Redirect URLs" list.
+            redirectTo: window.location.origin + '/' + APP_URL,
+        }
+    });
+    if (error) showFeedback('login-feedback', 'error', error.message);
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  FORGOT PASSWORD handler
+// ────────────────────────────────────────────────────────────────────────────
+async function handleForgotPassword() {
+    clearFeedback();
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) {
+        setFieldError('login-email-err', 'Enter your email above first.');
+        return;
+    }
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/password-reset.html', // create a reset-pw page
+    });
+
+    if (error) {
+        showFeedback('login-feedback', 'error', error.message);
+    } else {
+        showFeedback('login-feedback', 'success', 'Password reset email sent — check your inbox.');
+    }
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Auth state listener — auto-redirect if already logged in
+// ────────────────────────────────────────────────────────────────────────────
+sb.auth.onAuthStateChange((event, session) => {
+    if (session && event === 'SIGNED_IN') {
+        checkAndShowLegalModals(session);
+    }
+});
+
+// Store default button labels for the spinner swap
+document.getElementById('login-btn-text').dataset.default  = 'Sign In';
+document.getElementById('signup-btn-text').dataset.default = 'Create Account';
+</script>
+
+</body>
+</html>

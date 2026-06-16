@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIUU STUDIO — AI Creator Platform</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <meta name="description" content="The AI-powered workspace built for content creators. Generate ideas, analyze hooks, plan shots, and ship better content — faster.">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SIUU Studio",
+  "alternateName": [
+    "Siu Studio",
+    "Siuuu Studio",
+    "SIUUStudio"
+  ],
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web, iOS, Android, Windows, macOS",
+  "offers": {
+    "@type": "Offer",
+    "price": "0.00",
+    "priceCurrency": "USD"
+  },
+  "description": "The all-in-one AI workspace for content creators. Generate viral video ideas, analyze hooks, plan b-roll shots, write scripts, and optimize titles for maximum CTR."
+}
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --orange:       #f97316;
+            --orange-dim:   rgba(249,115,22,0.12);
+            --orange-glow:  rgba(249,115,22,0.45);
+            --orange-mid:   rgba(249,115,22,0.25);
+            --bg:           #0a0f1a;
+            --surface:      #111827;
+            --surface2:     #1a2234;
+            --border:       rgba(255,255,255,0.07);
+            --border-hi:    rgba(255,255,255,0.11);
+            --text:         #e2e8f0;
+            --muted:        #64748b;
+            --muted-hi:     #94a3b8;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, .display { font-family: 'Syne', sans-serif; }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* ── Scrollbar ───────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+
+        /* ══════════════════════════════════════════════════════════
+           BACKGROUND ATMOSPHERE
+        ══════════════════════════════════════════════════════════ */
+        .bg-atmosphere {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(249,115,22,0.12), transparent 70%);
+            top: -200px; left: 50%;
+            transform: translateX(-50%);
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(249,115,22,0.07), transparent 70%);
+            bottom: 20%; right: -100px;
+            animation-delay: -4s;
+        }
+
+        .orb-3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(249,115,22,0.06), transparent 70%);
+            top: 50%; left: -80px;
+            animation-delay: -8s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            33%       { transform: translateY(-30px) scale(1.05); }
+            66%       { transform: translateY(20px) scale(0.97); }
+        }
+
+        /* Grid texture */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           NAVBAR
+        ══════════════════════════════════════════════════════════ */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 15, 26, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            animation: navIn 0.6s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        @keyframes navIn {
+            from { opacity: 0; transform: translateY(-100%); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-logo-icon {
+            width: 36px; height: 36px;
+            background: var(--orange);
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 1.1rem;
+            color: #fff;
+            box-shadow: 0 0 18px var(--orange-glow);
+            animation: pulse-glow 2.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 14px var(--orange-glow); }
+            50%       { box-shadow: 0 0 28px var(--orange-glow), 0 0 50px rgba(249,115,22,0.2); }
+        }
+
+        .nav-logo-text {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #fff;
+            letter-spacing: 0.04em;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--muted);
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        .nav-cta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-ghost {
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--muted-hi);
+            border: 1px solid var(--border-hi);
+            background: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+            border-color: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .btn-primary {
+            padding: 9px 22px;
+            border-radius: 10px;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--orange);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(249,115,22,0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary:hover {
+            background: #ea6c0a;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(249,115,22,0.5);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        @media (max-width: 640px) {
+            .nav-links { display: none; }
+            .btn-ghost  { display: none; }
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           HERO
+        ══════════════════════════════════════════════════════════ */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.25);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--orange);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            animation: heroIn 0.7s cubic-bezier(.16,1,.3,1) 0.1s both;
+        }
+
+        .hero-badge-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--orange);
+            animation: dotPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.5; transform: scale(0.7); }
+        }
+
+        .hero-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(2.6rem, 7vw, 5.5rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: #fff;
+            margin-bottom: 24px;
+            animation: heroIn 0.7s cubic-bezier(.16,1,.3,1) 0.2s both;
+        }
+
+        .hero-title .accent {
+            background: linear-gradient(135deg, var(--orange), #fb923c, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            max-width: 560px;
+            font-size: clamp(1rem, 2.5vw, 1.15rem);
+            font-weight: 400;
+            color: var(--muted-hi);
+            line-height: 1.7;
+            margin-bottom: 40px;
+            animation: heroIn 0.7s cubic-bezier(.16,1,.3,1) 0.3s both;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: heroIn 0.7s cubic-bezier(.16,1,.3,1) 0.4s both;
+        }
+
+        .btn-hero {
+            padding: 14px 32px;
+            border-radius: 14px;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--orange);
+            border: none;
+            cursor: pointer;
+            transition: all 0.22s;
+            box-shadow: 0 6px 28px rgba(249,115,22,0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-hero:hover {
+            background: #ea6c0a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(249,115,22,0.55);
+        }
+
+        .btn-hero:active { transform: translateY(0); }
+
+        .btn-hero-arrow {
+            transition: transform 0.2s;
+        }
+        .btn-hero:hover .btn-hero-arrow { transform: translateX(3px); }
+
+        .btn-secondary {
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: var(--muted-hi);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-hi);
+            cursor: pointer;
+            transition: all 0.22s;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.18);
+        }
+
+        @keyframes heroIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats row */
+        .hero-stats {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-top: 60px;
+            animation: heroIn 0.7s cubic-bezier(.16,1,.3,1) 0.55s both;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-divider {
+            width: 1px; height: 32px;
+            background: var(--border-hi);
+        }
+
+        .stat-item { text-align: center; }
+
+        .stat-number {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-number span { color: var(--orange); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* App preview mockup */
+        .hero-mockup {
+            position: relative;
+            z-index: 1;
+            margin-top: 72px;
+            max-width: 900px;
+            width: 100%;
+            animation: heroIn 0.9s cubic-bezier(.16,1,.3,1) 0.6s both;
+        }
+
+        .mockup-frame {
+            background: var(--surface);
+            border: 1px solid var(--border-hi);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(249,115,22,0.06),
+                0 40px 100px rgba(0,0,0,0.6),
+                0 0 100px rgba(249,115,22,0.06);
+        }
+
+        .mockup-bar {
+            height: 44px;
+            background: rgba(15, 20, 35, 0.9);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 8px;
+        }
+
+        .mockup-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+
+        .mockup-body {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            height: 340px;
+        }
+
+        .mockup-sidebar {
+            background: rgba(10,15,26,0.8);
+            border-right: 1px solid var(--border);
+            padding: 20px 12px;
+        }
+
+        .mockup-logo-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 0 8px;
+        }
+
+        .mockup-logo-icon {
+            width: 28px; height: 28px;
+            background: var(--orange);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 0.8rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .mockup-logo-label {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+
+        .mockup-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 2px;
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        .mockup-nav-item.active {
+            background: linear-gradient(90deg, rgba(249,115,22,0.18), rgba(249,115,22,0.05));
+            color: var(--orange);
+            border-left: 2px solid var(--orange);
+        }
+
+        .mockup-nav-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+
+        .mockup-content {
+            padding: 24px;
+            background: rgba(10, 15, 26, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .mockup-heading {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .mockup-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .mockup-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .mockup-card-tag {
+            font-size: 0.6rem;
+            color: var(--orange);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 5px;
+        }
+
+        .mockup-card-line {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.08);
+            margin-bottom: 4px;
+        }
+
+        .mockup-card-line.short { width: 70%; }
+        .mockup-card-line.shorter { width: 45%; }
+
+        .mockup-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .mockup-input {
+            flex: 1;
+            height: 34px;
+            background: rgba(15,23,42,0.8);
+            border: 1px solid var(--border-hi);
+            border-radius: 8px;
+        }
+
+        .mockup-send {
+            width: 34px; height: 34px;
+            background: var(--orange);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        /* Gradient fade at bottom of mockup */
+        .mockup-fade {
+            height: 80px;
+            background: linear-gradient(to top, var(--bg), transparent);
+            margin-top: -80px;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           SECTION SHARED
+        ══════════════════════════════════════════════════════════ */
+        section {
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--orange);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 18px; height: 1px;
+            background: var(--orange);
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            letter-spacing: -0.025em;
+            color: #fff;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .section-sub {
+            font-size: 1rem;
+            color: var(--muted-hi);
+            line-height: 1.7;
+            max-width: 480px;
+        }
+
+        /* Scroll reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.6s cubic-bezier(.16,1,.3,1), transform 0.6s cubic-bezier(.16,1,.3,1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+        .reveal-delay-6 { transition-delay: 0.6s; }
+
+        /* ══════════════════════════════════════════════════════════
+           FEATURES
+        ══════════════════════════════════════════════════════════ */
+        .features {
+            padding: 80px 0 100px;
+        }
+
+        .features-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .features-header .section-sub {
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top left, rgba(249,115,22,0.06), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(249,115,22,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(249,115,22,0.1);
+        }
+
+        .feature-card:hover::before { opacity: 1; }
+
+        .feature-icon {
+            width: 46px; height: 46px;
+            border-radius: 13px;
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.2);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 18px;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover .feature-icon {
+            background: rgba(249,115,22,0.2);
+            box-shadow: 0 0 20px rgba(249,115,22,0.2);
+        }
+
+        .feature-icon svg { width: 20px; height: 20px; color: var(--orange); }
+
+        .feature-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.875rem;
+            color: var(--muted-hi);
+            line-height: 1.65;
+        }
+
+        .feature-tag {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.15);
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--orange);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           HOW IT WORKS
+        ══════════════════════════════════════════════════════════ */
+        .how {
+            padding: 80px 0 100px;
+            background: linear-gradient(180deg, transparent, rgba(249,115,22,0.03) 50%, transparent);
+        }
+
+        .how-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .how-inner { grid-template-columns: 1fr; gap: 48px; }
+        }
+
+        .how-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .how-step {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: var(--orange);
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .step-content p {
+            font-size: 0.875rem;
+            color: var(--muted-hi);
+            line-height: 1.65;
+        }
+
+        /* Visual panel */
+        .how-visual {
+            background: var(--surface);
+            border: 1px solid var(--border-hi);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+        }
+
+        .how-visual-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 20px;
+        }
+
+        .prompt-bubble {
+            background: rgba(249,115,22,0.1);
+            border: 1px solid rgba(249,115,22,0.2);
+            border-radius: 12px 12px 12px 2px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            color: #fed7aa;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .response-bubble {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px 12px 2px 12px;
+            padding: 14px 16px;
+            font-size: 0.82rem;
+            color: var(--text);
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .response-bubble::after {
+            content: '▋';
+            color: var(--orange);
+            animation: blink 0.9s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 49%  { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .idea-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 14px;
+        }
+
+        .idea-tag {
+            padding: 5px 12px;
+            border-radius: 100px;
+            background: var(--surface2);
+            border: 1px solid var(--border-hi);
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--muted-hi);
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           SOCIAL PROOF / TOOLS STRIP
+        ══════════════════════════════════════════════════════════ */
+        .tools-strip {
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tools-strip-label {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 28px;
+        }
+
+        .tools-list {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .tool-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 100px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--muted-hi);
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .tool-pill:hover {
+            border-color: rgba(249,115,22,0.3);
+            color: var(--text);
+        }
+
+        .tool-pill-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--orange);
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           CTA BANNER
+        ══════════════════════════════════════════════════════════ */
+        .cta-section {
+            padding: 100px 0 120px;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.05));
+            border: 1px solid rgba(249,115,22,0.25);
+            border-radius: 28px;
+            padding: 64px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: -60px; left: 50%;
+            transform: translateX(-50%);
+            width: 400px; height: 200px;
+            background: radial-gradient(ellipse, rgba(249,115,22,0.2), transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-box h2 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            letter-spacing: -0.025em;
+            color: #fff;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .cta-box p {
+            font-size: 1rem;
+            color: var(--muted-hi);
+            margin-bottom: 36px;
+            line-height: 1.7;
+            max-width: 460px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+        }
+
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 36px;
+            border-radius: 14px;
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--orange);
+            border: none;
+            cursor: pointer;
+            transition: all 0.22s;
+            box-shadow: 0 8px 32px rgba(249,115,22,0.45);
+            position: relative;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-cta:hover {
+            background: #ea6c0a;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 44px rgba(249,115,22,0.6);
+        }
+
+        .btn-cta-arrow { transition: transform 0.2s; }
+        .btn-cta:hover .btn-cta-arrow { transform: translateX(4px); }
+
+        .cta-note {
+            margin-top: 16px;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           FOOTER
+        ══════════════════════════════════════════════════════════ */
+        footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 36px 24px;
+        }
+
+        .footer-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-logo-icon {
+            width: 30px; height: 30px;
+            background: var(--orange);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 0.9rem;
+            color: #fff;
+        }
+
+        .footer-brand {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #fff;
+        }
+
+        .footer-copy {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            font-size: 0.78rem;
+            color: var(--muted);
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover { color: var(--text); }
+
+        /* ══════════════════════════════════════════════════════════
+           LEGAL MODAL
+        ══════════════════════════════════════════════════════════ */
+        #legal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.82);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: legalFadeIn 0.2s ease both;
+        }
+        #legal-overlay.open { display: flex; }
+
+        @keyframes legalFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .legal-modal {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 22px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 28px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(249,115,22,0.07);
+            animation: legalSlideUp 0.28s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        @keyframes legalSlideUp {
+            from { opacity: 0; transform: translateY(22px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .legal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 22px 26px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+
+        .legal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .legal-header-icon {
+            width: 36px; height: 36px;
+            background: rgba(249,115,22,0.12);
+            border: 1px solid rgba(249,115,22,0.22);
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            color: var(--orange);
+        }
+
+        .legal-header-icon svg { width: 17px; height: 17px; }
+
+        .legal-header-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+
+        .legal-header-sub {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        .legal-close {
+            width: 32px; height: 32px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--muted);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .legal-close:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .legal-close svg { width: 15px; height: 15px; }
+
+        .legal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 22px 26px;
+            color: #94a3b8;
+            font-size: 0.83rem;
+            line-height: 1.75;
+        }
+
+        .legal-body h2 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin: 20px 0 7px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .legal-body h2:first-child { margin-top: 0; }
+
+        .legal-body p { margin-bottom: 10px; }
+        .legal-body p:last-child { margin-bottom: 0; }
+        .legal-body strong { color: #e2e8f0; font-weight: 600; }
+
+        .legal-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .legal-body ul li {
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .legal-body ul li::before {
+            content: '–';
+            position: absolute;
+            left: 0;
+            color: var(--orange);
+        }
+
+        .legal-caps {
+            text-transform: uppercase;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.75);
+            background: rgba(249,115,22,0.06);
+            border: 1px solid rgba(249,115,22,0.1);
+            border-radius: 8px;
+            padding: 10px 13px;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .legal-footer {
+            padding: 16px 26px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .legal-btn-close {
+            padding: 10px 24px;
+            background: var(--orange);
+            border: none;
+            border-radius: 11px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+            box-shadow: 0 4px 16px rgba(249,115,22,0.3);
+            letter-spacing: 0.02em;
+        }
+
+        .legal-btn-close:hover {
+            background: #ea6c0a;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 22px rgba(249,115,22,0.45);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-atmosphere">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- ════════════════════════ NAVBAR ════════════════════════ -->
+<nav>
+    <a href="#" class="nav-logo">
+        <div class="nav-logo-icon">S</div>
+        <span class="nav-logo-text">SIUU STUDIO</span>
+    </a>
+
+    <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+    </ul>
+
+    <div class="nav-cta">
+        <a href="./siuu-auth.html" class="btn-ghost">Sign In</a>
+        <a href="./siuu-auth.html" class="btn-primary">
+            Get Started
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </a>
+    </div>
+</nav>
+
+<!-- ════════════════════════ HERO ════════════════════════ -->
+<section class="hero">
+    <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        AI-Powered Creator Tools
+    </div>
+
+    <h1 class="hero-title">
+        Create content that<br>
+        <span class="accent">actually performs</span>
+    </h1>
+
+    <p class="hero-sub">
+        SIUU Studio is your all-in-one AI workspace — from viral idea generation to
+        shot planning and editing guides, built for creators who move fast.
+    </p>
+
+    <div class="hero-actions">
+        <a href="./siuu-auth.html" class="btn-hero">
+            Start for free
+            <svg class="btn-hero-arrow" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </a>
+        <a href="#features" class="btn-secondary">See all features</a>
+    </div>
+
+    <div class="hero-stats">
+        <div class="stat-item">
+            <div class="stat-number">10<span>+</span></div>
+            <div class="stat-label">AI Tools</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+            <div class="stat-number"><span>∞</span></div>
+            <div class="stat-label">Ideas Generated</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+            <div class="stat-number">100<span>%</span></div>
+            <div class="stat-label">Free to Start</div>
+        </div>
+    </div>
+
+    <!-- App mockup -->
+    <div class="hero-mockup">
+        <div class="mockup-frame">
+            <div class="mockup-bar">
+                <div class="mockup-dot" style="background:#ef4444;"></div>
+                <div class="mockup-dot" style="background:#f59e0b;"></div>
+                <div class="mockup-dot" style="background:#22c55e;"></div>
+            </div>
+            <div class="mockup-body">
+                <div class="mockup-sidebar">
+                    <div class="mockup-logo-row">
+                        <div class="mockup-logo-icon">S</div>
+                        <span class="mockup-logo-label">SIUU STUDIO</span>
+                    </div>
+                    <div class="mockup-nav-item active">
+                        <div class="mockup-nav-dot"></div> Idea Generator
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Hook Analyzer
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Title & Thumbnail
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Shot Planner
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Editing Guide
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Script Writer
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Caption Generator
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Trend Analyzer
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Content Calendar
+                    </div>
+                    <div class="mockup-nav-item">
+                        <div class="mockup-nav-dot"></div> Projects Studio
+                    </div>
+                </div>
+                <div class="mockup-content">
+                    <div class="mockup-heading">AI Idea Generator</div>
+                    <div class="mockup-cards">
+                        <div class="mockup-card">
+                            <div class="mockup-card-tag">Trending</div>
+                            <div class="mockup-card-line"></div>
+                            <div class="mockup-card-line short"></div>
+                            <div class="mockup-card-line shorter"></div>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-card-tag">Viral</div>
+                            <div class="mockup-card-line"></div>
+                            <div class="mockup-card-line short"></div>
+                            <div class="mockup-card-line shorter"></div>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-card-tag">Evergreen</div>
+                            <div class="mockup-card-line"></div>
+                            <div class="mockup-card-line short"></div>
+                            <div class="mockup-card-line shorter"></div>
+                        </div>
+                    </div>
+                    <div class="mockup-input-row">
+                        <div class="mockup-input"></div>
+                        <div class="mockup-send"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mockup-fade"></div>
+    </div>
+</section>
+
+<!-- ════════════════ TOOLS STRIP ════════════════ -->
+<div class="tools-strip">
+    <div class="container">
+        <div class="tools-strip-label">Everything you need to create better content</div>
+        <div class="tools-list">
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Idea Generator</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Hook Analyzer</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Title & Thumbnail</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Shot Planner</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Editing Guide</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Script Writer</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Caption Generator</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Trend Analyzer</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Content Calendar</div>
+            <div class="tool-pill"><div class="tool-pill-dot"></div> Projects Studio</div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ FEATURES ════════════════════════ -->
+<section class="features" id="features">
+    <div class="container">
+        <div class="features-header reveal">
+            <div class="section-label">Features</div>
+            <h2 class="section-title">Every tool a creator needs</h2>
+            <p class="section-sub">Ten AI-powered modules, one seamless workspace. No more switching between a dozen apps.</p>
+        </div>
+
+        <div class="features-grid">
+
+            <!-- Idea Generator -->
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Idea Generator</div>
+                <div class="feature-desc">Generate scroll-stopping video ideas tailored to your niche. Get trending topics, evergreen angles, and viral formats on demand.</div>
+                <span class="feature-tag">AI Powered</span>
+            </div>
+
+            <!-- Hook Analyzer -->
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Hook Analyzer</div>
+                <div class="feature-desc">Score your video hooks before you film. Understand why viewers drop off in the first 3 seconds and how to fix it instantly.</div>
+                <span class="feature-tag">Score & Optimize</span>
+            </div>
+
+            <!-- Title & Thumbnail -->
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Title & Thumbnail Lab</div>
+                <div class="feature-desc">Craft click-worthy titles and thumbnail concepts engineered for maximum CTR. A/B test angles before publishing.</div>
+                <span class="feature-tag">CTR Optimized</span>
+            </div>
+
+            <!-- Shot Planner -->
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Shot Planner</div>
+                <div class="feature-desc">Plan every shot before you pick up a camera. Get scene-by-scene breakdowns, B-roll suggestions, and pacing guides.</div>
+                <span class="feature-tag">Pre-Production</span>
+            </div>
+
+            <!-- Editing Guide -->
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.848 8.25l1.536.887M7.848 8.25a3 3 0 11-5.196-3 3 3 0 015.196 3zm1.536.887a2.165 2.165 0 011.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m-1.536.887a3 3 0 11-5.196 3 3 3 0 015.196-3zm1.536-.887a2.165 2.165 0 001.083-1.838c.005-.352.054-.695.14-1.025m-1.223 2.863l2.077-1.199m0-3.328a2.165 2.165 0 010 3.328m0-3.328l3.107-1.794m-3.107 5.122l3.107 1.794M16.5 15.75a3 3 0 105.196 3 3 3 0 00-5.196-3zm0-7.5a3 3 0 105.196-3 3 3 0 00-5.196 3z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Editing Guide</div>
+                <div class="feature-desc">Get a custom editing roadmap for your video — cut points, music cues, text overlay timing, and retention tactics.</div>
+                <span class="feature-tag">Post-Production</span>
+            </div>
+
+            <!-- Projects Studio -->
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Projects Studio</div>
+                <div class="feature-desc">Keep all your video projects organized in one place. Save ideas, notes, scripts, and AI outputs per project — never lose a concept again.</div>
+                <span class="feature-tag">Organized Workspace</span>
+            </div>
+
+            <!-- Script Writer -->
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Script Writer</div>
+                <div class="feature-desc">Generate full, ready-to-film video scripts in seconds. Hook, intro, sections, and CTA — all optimized for your chosen platform.</div>
+                <span class="feature-tag">Content Creation</span>
+            </div>
+
+            <!-- Caption Generator -->
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Caption Generator</div>
+                <div class="feature-desc">Get 3 viral caption options with platform-optimized hashtags for every post. Includes best posting times and power words for maximum reach.</div>
+                <span class="feature-tag">Social Media</span>
+            </div>
+
+            <!-- Trend Analyzer -->
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Trend Analyzer</div>
+                <div class="feature-desc">Discover the top 5 trending topics and formats dominating your niche right now. Get specific angles and what to avoid before you film.</div>
+                <span class="feature-tag">Strategy</span>
+            </div>
+
+            <!-- Content Calendar -->
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div class="feature-name">Content Calendar</div>
+                <div class="feature-desc">Build a full 4-week posting schedule tailored to your niche. Set your posting frequency and get day-by-day content ideas, formats, and goals.</div>
+                <span class="feature-tag">Planning</span>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════ HOW IT WORKS ════════════════════════ -->
+<section class="how" id="how">
+    <div class="container">
+        <div class="how-inner">
+            <div>
+                <div class="section-label reveal">How it works</div>
+                <h2 class="section-title reveal reveal-delay-1">From idea to<br>published — fast</h2>
+                <p class="section-sub reveal reveal-delay-2" style="margin-bottom:40px;">
+                    SIUU Studio removes the friction from content creation so you can focus on what matters — making great videos.
+                </p>
+
+                <div class="how-steps">
+                    <div class="how-step reveal reveal-delay-2">
+                        <div class="step-num">01</div>
+                        <div class="step-content">
+                            <h4>Describe your niche</h4>
+                            <p>Tell the AI your channel topic, audience, and goals. It calibrates every tool to your specific content style.</p>
+                        </div>
+                    </div>
+                    <div class="how-step reveal reveal-delay-3">
+                        <div class="step-num">02</div>
+                        <div class="step-content">
+                            <h4>Generate & plan your video</h4>
+                            <p>Use the Idea Generator, Hook Analyzer, and Shot Planner to build a complete video strategy before recording a single frame.</p>
+                        </div>
+                    </div>
+                    <div class="how-step reveal reveal-delay-4">
+                        <div class="step-num">03</div>
+                        <div class="step-content">
+                            <h4>Ship with confidence</h4>
+                            <p>Export your AI-generated plan, shoot your video, and apply the Editing Guide. Your best video is always your next one.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="how-visual reveal reveal-delay-3">
+                <div class="how-visual-title">Live Preview — Idea Generator</div>
+                <div class="prompt-bubble">
+                    "Give me 5 viral YouTube ideas for a productivity channel targeting students"
+                </div>
+                <div class="response-bubble">
+                    <strong style="color:#fff;">1. "I studied 12 hours a day for 30 days"</strong> — document the transformation with before/after grades<br><br>
+                    <strong style="color:#fff;">2. "The $0 study setup that beats a $2000 desk"</strong> — high CTR contrast thumbnail<br><br>
+                    <strong style="color:#fff;">3. "I tried the MIT study method for a week"</strong>
+                </div>
+                <div class="idea-tags">
+                    <span class="idea-tag">🎯 High retention</span>
+                    <span class="idea-tag">📈 Trending format</span>
+                    <span class="idea-tag">💡 Evergreen</span>
+                    <span class="idea-tag">🔥 Viral potential</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════ CTA ════════════════════════ -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-box reveal">
+            <h2>Ready to create your best content?</h2>
+            <p>Join creators using SIUU Studio to plan, produce, and publish videos that grow their audience.</p>
+            <a href="./siuu-auth.html" class="btn-cta">
+                Get started for free
+                <svg class="btn-cta-arrow" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </a>
+            <div class="cta-note">No credit card required · Free forever plan</div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════ FOOTER ════════════════════════ -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-logo">
+            <div class="footer-logo-icon">S</div>
+            <span class="footer-brand">SIUU STUDIO</span>
+        </div>
+        <div class="footer-copy">© 2026 SIUU Studio. All rights reserved.</div>
+        <div class="footer-links">
+            <a href="#" onclick="openLegal('privacy'); return false;">Privacy Policy</a>
+            <a href="#" onclick="openLegal('tos'); return false;">Terms of Service</a>
+        </div>
+    </div>
+</footer>
+
+
+<!-- ════════════════════════ LEGAL MODAL ════════════════════════ -->
+<div id="legal-overlay" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title"
+     onclick="if(event.target===this) closeLegal()">
+    <div class="legal-modal">
+
+        <div class="legal-header">
+            <div class="legal-header-left">
+                <div class="legal-header-icon" id="legal-icon">
+                    <!-- injected -->
+                </div>
+                <div>
+                    <div class="legal-header-title" id="legal-modal-title">Terms of Service</div>
+                    <div class="legal-header-sub">SIUU Studio · Effective June 16, 2026</div>
+                </div>
+            </div>
+            <button class="legal-close" onclick="closeLegal()" aria-label="Close">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="legal-body" id="legal-body"></div>
+
+        <div class="legal-footer">
+            <button class="legal-btn-close" onclick="closeLegal()">Close</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // ── Scroll reveal ──────────────────────────────────────────────────────────
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ── Legal modal ────────────────────────────────────────────────────────────
+    const LEGAL = {
+        tos: {
+            title: 'Terms of Service',
+            icon: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`,
+            html: `
+                <p><strong>Effective Date: June 16, 2026</strong></p>
+
+                <h2>1. Acceptance of Terms</h2>
+                <p>Welcome to SIUU Studio. By accessing or using the SIUU STUDIO — AI Creator Platform, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.</p>
+
+                <h2>2. User Conduct &amp; Content Moderation</h2>
+                <p>You are responsible for the content you generate using our AI tools. You agree not to create or distribute content that is illegal, harmful, or violates the rights of others.</p>
+
+
+                <h2>3. Limitation of Liability</h2>
+                <div class="legal-caps">To the maximum extent permitted by applicable law, SIUU Studio, its affiliates, directors, employees, and agents shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from (A) your access to or use of or inability to access or use the services; (B) any conduct or content of any third party on the services; or (C) unauthorized access, use, or alteration of your transmissions or content.</div>
+
+                <h2>4. Dispute Resolution &amp; Binding Arbitration</h2>
+                <p><strong>Please read this section carefully as it affects your legal rights.</strong> Any dispute, claim, or controversy arising out of or relating to these Terms shall be determined by binding arbitration in California before one arbitrator. You agree to waive your right to a jury trial or to participate in a class action.</p>
+
+                <h2>5. Changes to Terms</h2>
+                <p>We reserve the right to modify these Terms at any time. We will provide conspicuous notice of major changes on our platform.</p>
+
+                <h2>6. User Accounts</h2>
+                <p>To access certain features you may be required to create an account. You agree to provide accurate information and keep your credentials secure. You are responsible for all activities that occur under your account.</p>
+
+                <h2>7. Eligibility</h2>
+                <p>You must be at least 13 years of age to use the Service. If you are under 18, you represent that you have obtained permission from a parent or legal guardian.</p>
+
+                <h2>8. AI-Generated Content Disclaimer</h2>
+                <div class="legal-caps">The Service utilizes artificial intelligence to generate content. SIUU Studio does not guarantee the accuracy, reliability, or effectiveness of any generated output. All content is provided for informational and creative purposes only, and you are solely responsible for reviewing and using such content.</div>
+
+                <h2>9. Intellectual Property</h2>
+                <p>You retain ownership of the content you create using the Service. By using the Service, you grant SIUU Studio a limited, non-exclusive, royalty-free license to use, process, and display such content solely for the purpose of operating and improving the Service.</p>
+
+                <h2>10. Termination</h2>
+                <p>SIUU Studio reserves the right to suspend or terminate your access at any time, with or without notice, if you violate these Terms or engage in conduct that may harm the platform or its users.</p>
+            `
+        },
+        privacy: {
+            title: 'Privacy Policy',
+            icon: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`,
+            html: `
+                <p><strong>Effective Date: June 16, 2026</strong></p>
+                <p>This Privacy Policy explains how SIUU Studio collects, uses, and discloses information about you in compliance with the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA).</p>
+
+                <h2>1. Information We Collect</h2>
+                <ul>
+                    <li><strong>Identifiers:</strong> Name, alias, IP address, and email address (if provided during account creation).</li>
+                    <li><strong>Commercial Information:</strong> Projects created, tools utilized, and user engagement metrics.</li>
+                    <li><strong>Internet or Network Activity:</strong> Browsing history and interactions with our AI models.</li>
+                    <li><strong>Sensitive Personal Information:</strong> We do not intentionally collect sensitive personal information unless explicitly provided by you.</li>
+                </ul>
+
+                <h2>2. Usage and Sharing of Information</h2>
+                <p>We use your data to provide, personalize, and improve our AI creation tools. <strong>SIUU Studio does not sell your personal information to third parties.</strong> We only share information with authorized service providers necessary to operate the platform, under strict confidentiality agreements.</p>
+
+                <h2>3. Your California Privacy Rights (CCPA/CPRA)</h2>
+                <ul>
+                    <li><strong>Right to Know:</strong> You may request details about the personal information we have collected about you over the past 12 months.</li>
+                    <li><strong>Right to Delete:</strong> You may request deletion of personal information we have collected, subject to certain legal exceptions.</li>
+                    <li><strong>Right to Opt-Out:</strong> You have the right to opt-out of the sharing of your personal information for cross-context behavioral advertising.</li>
+                    <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights.</li>
+                </ul>
+
+                <h2>4. How to Submit a Request</h2>
+                <p>To exercise your rights, please submit a verifiable consumer request by emailing <strong>privacy@siuustudio.com</strong>.</p>
+
+                <h2>5. Accessibility</h2>
+                <p>This Privacy Policy is designed to be easily readable and accessible. We review and update this policy at least annually. If you require this policy in an alternative format, please contact us at support@siuustudio.com.</p>
+
+                <h2>6. AI Technology &amp; Transparency (AB 2013 / SB 942)</h2>
+                <p>SIUU Studio's AI features are powered by the Cerebras AI API. We have not fine-tuned, retrained, or substantially modified the underlying base model. All AI behavior is guided by proprietary system instructions designed to optimize content strategy for creators.</p>
+                <p>SIUU Studio does not collect neural data, biometric data, or any data generated by the brain or nervous system. All AI-generated content is intended as creative suggestions only — users remain fully responsible for reviewing and verifying any AI output before publishing.</p>
+            `
+        }
+    };
+
+    function openLegal(type) {
+        const doc = LEGAL[type];
+        document.getElementById('legal-modal-title').textContent = doc.title;
+        document.getElementById('legal-icon').innerHTML           = doc.icon;
+        document.getElementById('legal-body').innerHTML           = doc.html;
+        document.getElementById('legal-body').scrollTop           = 0;
+
+        const overlay = document.getElementById('legal-overlay');
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLegal() {
+        document.getElementById('legal-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLegal();
+    });
+</script>
+
+
+</body>
+</html>
