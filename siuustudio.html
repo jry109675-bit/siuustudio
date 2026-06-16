@@ -102,15 +102,59 @@
 </head>
 <body>
 
-<!-- Pre-React loader: visible immediately so users never see a raw black screen
-     while the auth guard awaits getSession() and React boots. Removed by React
-     once banCheckDone flips true. -->
-<div id="pre-root-loader" style="min-height:100vh;background:#0a0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+<!-- Pre-React loader + diagnostic panel.
+     The diag panel is visible from the very first JS execution — before React
+     even boots — so we can debug on mobile Safari without DevTools. -->
+<div id="pre-root-loader" style="min-height:100vh;background:#0a0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding-bottom:50vh;">
     <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>
     <div style="width:40px;height:40px;border:3px solid rgba(249,115,22,0.2);border-top:3px solid #f97316;border-radius:50%;animation:_spin 1s linear infinite"></div>
     <p style="color:#64748b;font-size:14px;font-family:'DM Sans',sans-serif;margin:0">Loading SIUU Studio…</p>
 </div>
+
+<!-- Diagnostic overlay — fixed to bottom, always on top, written to from plain JS before React loads -->
+<div id="diag-overlay" style="position:fixed;bottom:0;left:0;right:0;background:#1a0000;border-top:3px solid #ef4444;z-index:99999;max-height:55vh;overflow-y:auto;padding:10px 12px;box-sizing:border-box;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="color:#ef4444;font-weight:bold;font-size:12px;font-family:monospace;">🔴 SIUU DIAGNOSTIC</span>
+        <button onclick="document.getElementById('diag-overlay').style.display='none'" style="color:#ef4444;background:none;border:1px solid #ef4444;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">hide</button>
+    </div>
+    <pre id="diag-log" style="color:#fca5a5;font-size:11px;font-family:monospace;white-space:pre-wrap;word-break:break-all;margin:0;line-height:1.5;">Initialising…
+</pre>
+</div>
+
 <div id="root"></div>
+
+<script>
+    // ── Global diagnostic logger — works before React exists ─────────────────
+    window._diagLog = (function() {
+        const lines = ['[0.00s] Page script started'];
+        const el = () => document.getElementById('diag-log');
+        const flush = () => { const e = el(); if (e) e.textContent = lines.join('\n'); };
+        return function(msg) {
+            const ts = (performance.now() / 1000).toFixed(2);
+            lines.push('[' + ts + 's] ' + msg);
+            flush();
+        };
+    })();
+
+    // Intercept console methods globally so everything shows in the panel
+    (function() {
+        const fmt = (args) => args.map(a => { try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(_) { return String(a); } }).join(' ');
+        ['log','warn','error'].forEach(function(lvl) {
+            const orig = console[lvl].bind(console);
+            console[lvl] = function() {
+                orig.apply(console, arguments);
+                window._diagLog('[' + lvl.toUpperCase() + '] ' + fmt(Array.from(arguments)));
+            };
+        });
+        window.addEventListener('error', function(e) {
+            window._diagLog('[JSERROR] ' + e.message + ' @ ' + e.filename + ':' + e.lineno);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            window._diagLog('[UNHANDLED] ' + (e.reason?.message || String(e.reason)));
+        });
+    })();
+
+    window._diagLog('Scripts intercepted, starting auth guard');</script>
 
 <script>
     // ════════════════════════════════════════════════════════════════════════
@@ -130,33 +174,31 @@
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
     // Auth guard with session retry.
-    // Problem: after siuu-auth.html redirects back here, Supabase may not have
-    // finished writing the session to localStorage yet, causing getSession() to
-    // return null on the first call and bouncing the user back to the auth page.
-    // Fix: if the first check returns no session, wait 300 ms and try once more
-    // before giving up and redirecting.
     (async () => {
         try {
-            let { data: { session } } = await window._sb.auth.getSession();
+            window._diagLog('Auth guard: calling getSession() #1');
+            let { data: { session }, error: e1 } = await window._sb.auth.getSession();
+            window._diagLog('Auth guard: getSession #1 result — session=' + (session ? 'YES' : 'null') + (e1 ? ' err=' + e1.message : ''));
 
             if (!session) {
-                // Give Supabase one beat to finish writing the session that was
-                // just set by the post-login redirect before concluding the user
-                // is truly unauthenticated.
+                window._diagLog('Auth guard: no session, waiting 300ms then retrying...');
                 await new Promise(r => setTimeout(r, 300));
-                ({ data: { session } } = await window._sb.auth.getSession());
+                let e2;
+                ({ data: { session }, error: e2 } = await window._sb.auth.getSession());
+                window._diagLog('Auth guard: getSession #2 result — session=' + (session ? 'YES' : 'null') + (e2 ? ' err=' + e2.message : ''));
             }
 
             if (!session) {
+                window._diagLog('Auth guard: still no session — redirecting to auth page');
                 window.location.replace(AUTH_PAGE);
                 return;
             }
 
-            // Expose user for use inside React
+            window._diagLog('Auth guard: session OK, user=' + (session.user?.email || session.user?.id || 'unknown'));
             window._sbUser = session.user ?? null;
+            window._diagLog('Auth guard: done, React should boot now');
         } catch (e) {
-            // If the SDK itself throws (e.g. network error), redirect to auth
-            // rather than leaving the user staring at the pre-root loader.
+            window._diagLog('Auth guard: EXCEPTION — ' + e.message);
             console.error('Auth guard error:', e);
             window.location.replace(AUTH_PAGE);
         }
