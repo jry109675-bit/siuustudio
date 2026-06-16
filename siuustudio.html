@@ -101,6 +101,15 @@
     </style>
 </head>
 <body>
+
+<!-- Pre-React loader: visible immediately so users never see a raw black screen
+     while the auth guard awaits getSession() and React boots. Removed by React
+     once banCheckDone flips true. -->
+<div id="pre-root-loader" style="min-height:100vh;background:#0a0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>
+    <div style="width:40px;height:40px;border:3px solid rgba(249,115,22,0.2);border-top:3px solid #f97316;border-radius:50%;animation:_spin 1s linear infinite"></div>
+    <p style="color:#64748b;font-size:14px;font-family:'DM Sans',sans-serif;margin:0">Loading SIUU Studio…</p>
+</div>
 <div id="root"></div>
 
 <script>
@@ -120,14 +129,37 @@
     const { createClient } = supabase;
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    // Check session synchronously where possible, async fallback for cold loads
+    // Auth guard with session retry.
+    // Problem: after siuu-auth.html redirects back here, Supabase may not have
+    // finished writing the session to localStorage yet, causing getSession() to
+    // return null on the first call and bouncing the user back to the auth page.
+    // Fix: if the first check returns no session, wait 300 ms and try once more
+    // before giving up and redirecting.
     (async () => {
-        const { data: { session } } = await window._sb.auth.getSession();
-        if (!session) {
+        try {
+            let { data: { session } } = await window._sb.auth.getSession();
+
+            if (!session) {
+                // Give Supabase one beat to finish writing the session that was
+                // just set by the post-login redirect before concluding the user
+                // is truly unauthenticated.
+                await new Promise(r => setTimeout(r, 300));
+                ({ data: { session } } = await window._sb.auth.getSession());
+            }
+
+            if (!session) {
+                window.location.replace(AUTH_PAGE);
+                return;
+            }
+
+            // Expose user for use inside React
+            window._sbUser = session.user ?? null;
+        } catch (e) {
+            // If the SDK itself throws (e.g. network error), redirect to auth
+            // rather than leaving the user staring at the pre-root loader.
+            console.error('Auth guard error:', e);
             window.location.replace(AUTH_PAGE);
         }
-        // Expose user for use inside React
-        window._sbUser = session?.user ?? null;
     })();
 
     // Sign-out helper called from the Header button
@@ -884,6 +916,13 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         // surfaces normal per-account bans (tiers 1-4) via the same call.
         // A 6-second timeout ensures a hung function never causes a permanent black screen.
         useEffect(() => {
+            const unlock = () => {
+                // Always unlock the UI and remove the pre-React loader.
+                // Nothing should ever cause a permanent black screen.
+                setBanCheckDone(true);
+                const loader = document.getElementById('pre-root-loader');
+                if (loader) loader.remove();
+            };
             (async () => {
                 const timeout = new Promise(resolve => setTimeout(() => resolve({ timedOut: true }), 6000));
                 try {
@@ -907,9 +946,14 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 } catch (e) {
                     console.warn('Ban check failed:', e);
                 } finally {
-                    setBanCheckDone(true);
+                    unlock();
                 }
-            })();
+            })().catch(e => {
+                // Outer safety net: if the async IIFE throws before reaching finally,
+                // still unlock so the user is never stuck on a black screen.
+                console.error('Ban check outer error:', e);
+                unlock();
+            });
         }, []);
 
         // ── Supabase DB helpers ───────────────────────────────────────────────────
