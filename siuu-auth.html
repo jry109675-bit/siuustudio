@@ -11,6 +11,9 @@
     <!-- ── Fonts (must match main app) ────────────────────────────── -->
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+    <!-- ── Cloudflare Turnstile ───────────────────────────────────── -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
     <!-- ── Supabase JS SDK (CDN) ──────────────────────────────────── -->
     <!-- Replace the placeholder URL/key below with your own project credentials -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -309,11 +312,6 @@
 
         .submit-btn:active:not(:disabled) { transform: translateY(0); }
 
-        .submit-btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-
         /* Spinner inside button */
         .btn-spinner {
             width: 16px; height: 16px;
@@ -441,6 +439,33 @@
         @keyframes panelIn {
             from { opacity: 0; transform: translateY(6px); }
             to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Turnstile widget wrapper ────────────────────────────── */
+        .turnstile-wrap {
+            margin: 16px 0 4px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* ── Submit button — locked (default) ───────────────────── */
+        .submit-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* ── Submit button — unlocked after Turnstile ────────────── */
+        .submit-btn.unlocked {
+            opacity: 1 !important;
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.45), 0 4px 24px rgba(249,115,22,0.5) !important;
+            animation: btn-pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes btn-pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(249,115,22,0.45), 0 4px 24px rgba(249,115,22,0.5); }
+            50%       { box-shadow: 0 0 0 6px rgba(249,115,22,0.25), 0 6px 32px rgba(249,115,22,0.65); }
         }
 
         /* ── Scrollbar (match main app) ──────────────────────────── */
@@ -721,7 +746,17 @@
                 <a class="forgot-link" onclick="handleForgotPassword()" tabindex="0"
                    role="button" aria-label="Forgot password">Forgot password?</a>
 
-                <button type="submit" class="submit-btn" id="login-btn">
+                <!-- Cloudflare Turnstile — must verify before Sign In unlocks -->
+                <div class="turnstile-wrap">
+                    <div class="cf-turnstile"
+                         data-sitekey="0x4AAAAAADmYuI3BPiKgkcek"
+                         data-callback="onLoginVerified"
+                         data-expired-callback="onLoginExpired"
+                         data-theme="dark"
+                         id="turnstile-login"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="login-btn" disabled>
                     <span id="login-btn-text">Sign In</span>
                 </button>
             </form>
@@ -827,7 +862,17 @@
                     <span class="field-error" id="signup-confirm-err"></span>
                 </div>
 
-                <button type="submit" class="submit-btn" id="signup-btn">
+                <!-- Cloudflare Turnstile — must verify before Create Account unlocks -->
+                <div class="turnstile-wrap">
+                    <div class="cf-turnstile"
+                         data-sitekey="0x4AAAAAADmYuI3BPiKgkcek"
+                         data-callback="onSignupVerified"
+                         data-expired-callback="onSignupExpired"
+                         data-theme="dark"
+                         id="turnstile-signup"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="signup-btn" disabled>
                     <span id="signup-btn-text">Create Account</span>
                 </button>
             </form>
@@ -888,7 +933,40 @@
 
 <script>
 // ════════════════════════════════════════════════════════════════════════════
-//  STEP 1 ─ Add your Supabase credentials here
+//  Cloudflare Turnstile — token state
+//  Replace data-sitekey above with your real site key from:
+//  Cloudflare Dashboard → Turnstile → Add Site
+// ════════════════════════════════════════════════════════════════════════════
+let _loginToken  = null;
+let _signupToken = null;
+
+function onLoginVerified(token) {
+    _loginToken = token;
+    const btn = document.getElementById('login-btn');
+    btn.disabled = false;
+    btn.classList.add('unlocked');
+}
+function onLoginExpired() {
+    _loginToken = null;
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.classList.remove('unlocked');
+}
+
+function onSignupVerified(token) {
+    _signupToken = token;
+    const btn = document.getElementById('signup-btn');
+    btn.disabled = false;
+    btn.classList.add('unlocked');
+}
+function onSignupExpired() {
+    _signupToken = null;
+    const btn = document.getElementById('signup-btn');
+    btn.disabled = true;
+    btn.classList.remove('unlocked');
+}
+
+
 //  Get them from: https://supabase.com → Project Settings → API
 // ════════════════════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://wxeigysrycbrikoaaaaa.supabase.co';   // ← replace
@@ -1117,6 +1195,23 @@ function switchTab(tab) {
     void panel.offsetWidth; // reflow
     panel.classList.add('auth-panel');
 
+    // Reset Turnstile for the newly shown panel
+    if (typeof turnstile !== 'undefined') {
+        if (isLogin) {
+            turnstile.reset('#turnstile-login');
+            _loginToken = null;
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.classList.remove('unlocked');
+        } else {
+            turnstile.reset('#turnstile-signup');
+            _signupToken = null;
+            const btn = document.getElementById('signup-btn');
+            btn.disabled = true;
+            btn.classList.remove('unlocked');
+        }
+    }
+
     clearFeedback();
 }
 
@@ -1218,6 +1313,19 @@ function updateStrength(pw) {
 
 
 // ────────────────────────────────────────────────────────────────────────────
+//  Server-side Turnstile verification
+// ────────────────────────────────────────────────────────────────────────────
+async function verifyTurnstileServerSide(token) {
+    const res = await fetch('/api/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    return data.success === true;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //  LOGIN handler
 // ────────────────────────────────────────────────────────────────────────────
 document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -1231,9 +1339,20 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
     if (!email) { setFieldError('login-email-err', 'Email is required.'); valid = false; }
     if (!pw)    { setFieldError('login-pw-err', 'Password is required.'); valid = false; }
+    if (!_loginToken) { showFeedback('login-feedback', 'error', 'Please complete the verification above.'); return; }
     if (!valid) return;
 
     setLoading('login-btn', 'login-btn-text', true);
+
+    // Verify Turnstile token server-side before attempting sign in
+    const tokenValid = await verifyTurnstileServerSide(_loginToken);
+    if (!tokenValid) {
+        setLoading('login-btn', 'login-btn-text', false);
+        showFeedback('login-feedback', 'error', 'Verification failed. Please try again.');
+        if (typeof turnstile !== 'undefined') turnstile.reset('#turnstile-login');
+        onLoginExpired();
+        return;
+    }
 
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
 
@@ -1241,6 +1360,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
     if (error) {
         showFeedback('login-feedback', 'error', error.message);
+        // Reset Turnstile so they have to re-verify
+        if (typeof turnstile !== 'undefined') turnstile.reset('#turnstile-login');
+        onLoginExpired();
         return;
     }
 
@@ -1267,9 +1389,20 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     if (!email)          { setFieldError('signup-email-err',   'Email is required.'); valid = false; }
     if (pw.length < 8)   { setFieldError('signup-pw-err',      'Password must be at least 8 characters.'); valid = false; }
     if (pw !== confirm)  { setFieldError('signup-confirm-err', 'Passwords do not match.'); valid = false; }
+    if (!_signupToken)   { showFeedback('signup-feedback', 'error', 'Please complete the verification above.'); return; }
     if (!valid) return;
 
     setLoading('signup-btn', 'signup-btn-text', true);
+
+    // Verify Turnstile token server-side before attempting sign up
+    const tokenValid = await verifyTurnstileServerSide(_signupToken);
+    if (!tokenValid) {
+        setLoading('signup-btn', 'signup-btn-text', false);
+        showFeedback('signup-feedback', 'error', 'Verification failed. Please try again.');
+        if (typeof turnstile !== 'undefined') turnstile.reset('#turnstile-signup');
+        onSignupExpired();
+        return;
+    }
 
     const { data, error } = await sb.auth.signUp({
         email,
@@ -1286,6 +1419,8 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
 
     if (error) {
         showFeedback('signup-feedback', 'error', error.message);
+        if (typeof turnstile !== 'undefined') turnstile.reset('#turnstile-signup');
+        onSignupExpired();
         return;
     }
 
