@@ -3282,7 +3282,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 const { data, error } = await window._sb
                     .from('coach_chat_sessions')
                     .select('id, session_key, messages, updated_at, created_at, project_id')
-                    .eq('project_id', currentProject?.id ?? null)
+                    .eq('project_id', currentProject.id)
                     .order('created_at', { ascending: false })
                     .limit(60);
                 if (error) throw error;
@@ -3424,16 +3424,9 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         return (
             <>
                 {!chatOpen && (
-                    <div className="fixed bottom-16 right-6 z-50 flex flex-col items-end gap-2">
-                        {!currentProject && (
-                            <div className="bg-slate-800 border border-orange-500/30 text-orange-300 text-[11px] px-3 py-1.5 rounded-xl shadow-lg max-w-[180px] text-center leading-snug">
-                                Select a project to use AI Coach
-                            </div>
-                        )}
-                        <button onClick={() => { if (!currentProject) { toast('Select a project first to use AI Coach.', 'error'); return; } setChatOpen(true); }} className="w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-2xl shadow-xl shadow-orange-500/30 flex items-center justify-center transition-all hover:scale-105 glow-pulse">
-                            <Icon path={I.message} className="w-6 h-6 text-white" />
-                        </button>
-                    </div>
+                    <button onClick={() => { if (!currentProject) { toast('Select a project first to use AI Coach.', 'error'); return; } setChatOpen(true); }} className="fixed bottom-16 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-2xl shadow-xl shadow-orange-500/30 flex items-center justify-center transition-all hover:scale-105 z-50 glow-pulse">
+                        <Icon path={I.message} className="w-6 h-6 text-white" />
+                    </button>
                 )}
                 {chatOpen && (
                     <div className="fixed bottom-6 right-6 w-96 h-[560px] glass rounded-2xl shadow-2xl flex flex-col z-50 slide-up border border-orange-500/10" style={{ maxWidth: 'calc(100vw - 48px)' }}>
@@ -3708,7 +3701,13 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                             </button>
                         </div>
                     ) : (
-                        <span className="text-slate-500 text-sm italic">No project selected</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-500 text-sm italic">No project selected</span>
+                            <div className="flex items-center gap-1.5 bg-slate-800/60 border border-slate-700/50 rounded-lg px-2.5 py-1 text-[11px] text-slate-400" title="AI tools will auto-create a project for you when you generate your first idea">
+                                <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="text-orange-400 flex-shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <span>AI tools auto-create a project</span>
+                            </div>
+                        </div>
                     )}
                 </div>
 
