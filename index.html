@@ -783,6 +783,7 @@
 
         @media (max-width: 768px) {
             .how-inner { grid-template-columns: 1fr; gap: 48px; }
+            .coach-spotlight-grid { grid-template-columns: 1fr !important; }
         }
 
         .how-steps {
@@ -1304,6 +1305,7 @@
 
     <ul class="nav-links">
         <li><a href="#features">Features</a></li>
+        <li><a href="#ai-coach" style="color:var(--orange);">AI Coach</a></li>
         <li><a href="#how">How it works</a></li>
     </ul>
 
@@ -1320,7 +1322,7 @@
 <section class="hero">
     <div class="hero-badge">
         <span class="hero-badge-dot"></span>
-        AI-Powered Creator Tools
+        AI-Powered Creator Tools · Now with AI Coach
     </div>
 
     <h1 class="hero-title">
@@ -1330,7 +1332,7 @@
 
     <p class="hero-sub">
         SIUU Studio is your all-in-one AI workspace — from viral idea generation to
-        shot planning and editing guides, built for creators who move fast.
+        shot planning and editing guides. Plus a personal <strong style="color:var(--orange);">AI Coach</strong> that knows your project and answers every creator question in real time.
     </p>
 
     <div class="hero-actions">
@@ -1451,6 +1453,7 @@
             <div class="tool-pill"><div class="tool-pill-dot"></div> Trend Analyzer</div>
             <div class="tool-pill"><div class="tool-pill-dot"></div> Content Calendar</div>
             <div class="tool-pill"><div class="tool-pill-dot"></div> Projects Studio</div>
+            <div class="tool-pill" style="border-color:var(--orange);background:rgba(249,115,22,0.08);"><div class="tool-pill-dot" style="background:var(--orange);box-shadow:0 0 6px var(--orange);"></div> AI Coach</div>
         </div>
     </div>
 </div>
@@ -1587,6 +1590,143 @@
                 <span class="feature-tag">Planning</span>
             </div>
 
+            <!-- AI Coach — span full width for emphasis -->
+            <div class="feature-card reveal reveal-delay-2" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(249,115,22,0.12) 0%,rgba(249,115,22,0.03) 100%);border-color:rgba(249,115,22,0.35);position:relative;overflow:hidden;">
+                <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(249,115,22,0.18) 0%,transparent 70%);pointer-events:none;"></div>
+                <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+                    <div class="feature-icon" style="background:rgba(249,115,22,0.2);flex-shrink:0;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3-3-3z"/>
+                        </svg>
+                    </div>
+                    <div style="flex:1;min-width:240px;">
+                        <div class="feature-name" style="color:#fff;font-size:1.1rem;">AI Coach <span style="font-size:0.75rem;color:var(--orange);font-weight:600;margin-left:6px;vertical-align:middle;">NEW</span></div>
+                        <div class="feature-desc" style="max-width:680px;">Your personal elite content strategist, available 24/7 inside the app. The AI Coach reads your active project — idea, hook score, script, shot plan — and gives specific, tailored advice for <em>your</em> video, not generic tips. Ask anything from "how do I improve my hook?" to "what B-roll should I shoot?" and get an instant answer that knows your exact context. Powered by Cerebras — one of the fastest AI inference platforms available.</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                            <span class="feature-tag" style="background:rgba(249,115,22,0.15);color:var(--orange);border-color:rgba(249,115,22,0.4);">Project-Aware</span>
+                            <span class="feature-tag" style="background:rgba(249,115,22,0.15);color:var(--orange);border-color:rgba(249,115,22,0.4);">Real-Time Streaming</span>
+                            <span class="feature-tag" style="background:rgba(249,115,22,0.15);color:var(--orange);border-color:rgba(249,115,22,0.4);">Persistent Chat History</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════ AI COACH SPOTLIGHT ════════════════════════ -->
+<section style="padding:80px 0;position:relative;overflow:hidden;" id="ai-coach">
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(249,115,22,0.06) 0%,transparent 60%);pointer-events:none;"></div>
+    <div style="position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(249,115,22,0.12) 0%,transparent 70%);pointer-events:none;"></div>
+    <div class="container" style="max-width:1100px;margin:0 auto;padding:0 24px;">
+
+        <div style="text-align:center;margin-bottom:56px;" class="reveal">
+            <div class="section-label">AI Coach</div>
+            <h2 class="section-title" style="margin-bottom:16px;">Your personal creator<br><span style="color:var(--orange);">coach on demand</span></h2>
+            <p class="section-sub">Not a chatbot. Not generic advice. An elite strategist that reads your exact project and tells you precisely what to do next.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;" class="reveal reveal-delay-1 coach-spotlight-grid">
+
+            <!-- Left: Chat mockup -->
+            <div style="background:rgba(15,15,25,0.8);border:1px solid rgba(249,115,22,0.2);border-radius:20px;padding:0;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04);">
+                <!-- Chat header -->
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <div style="width:32px;height:32px;background:var(--orange);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="16" height="16" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3-3-3z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:#fff;font-size:13px;">AI Coach</div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block;animation:pulse 2s infinite;"></span>
+                            <span style="font-size:11px;color:#64748b;">Coaching on: My YouTube Documentary</span>
+                        </div>
+                    </div>
+                    <div style="margin-left:auto;font-size:11px;color:#f97316;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);border-radius:6px;padding:3px 8px;">+context</div>
+                </div>
+                <!-- Project context pill -->
+                <div style="padding:10px 16px 4px;">
+                    <div style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:7px 10px;">
+                        <svg width="12" height="12" fill="none" stroke="#f97316" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                        <span style="font-size:11px;color:#fdba74;">Coaching on: <strong>My YouTube Documentary</strong></span>
+                    </div>
+                </div>
+                <!-- Messages -->
+                <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+                    <div style="display:flex;justify-content:flex-start;">
+                        <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.06);border-radius:12px;border-bottom-left-radius:3px;padding:10px 14px;max-width:86%;font-size:12px;color:#cbd5e1;line-height:1.6;">
+                            SIUUU! 🏆 I'm your <strong style="color:#fff;">AI Coach</strong> powered by SIUU AI! Ask me anything about video creation, editing, VFX, or viral content strategy.
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;">
+                        <div style="background:var(--orange);border-radius:12px;border-bottom-right-radius:3px;padding:10px 14px;max-width:80%;font-size:12px;color:#fff;line-height:1.6;">
+                            My hook score is 62/100. How do I improve it fast?
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-start;">
+                        <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.06);border-radius:12px;border-bottom-left-radius:3px;padding:10px 14px;max-width:90%;font-size:12px;color:#cbd5e1;line-height:1.6;">
+                            Your hook is losing people because it opens with context before the payoff. Flip it — lead with the most extreme result first.<br><br>
+                            Instead of <em style="color:#94a3b8;">"Today I spent 30 days filming a documentary..."</em><br>
+                            Try: <strong style="color:#fff;">"I almost quit filmmaking — this is what changed everything."</strong><br><br>
+                            Pattern-interrupt in the first 2 words, then let curiosity carry them. That alone should push you past 75. 🏆
+                        </div>
+                    </div>
+                </div>
+                <!-- Input -->
+                <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,0.05);">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <div style="flex:1;background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:9px 14px;font-size:11px;color:#475569;">Ask about My YouTube Documentary...</div>
+                        <div style="width:32px;height:32px;background:var(--orange);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Bullet points -->
+            <div style="display:flex;flex-direction:column;gap:28px;">
+                <div style="display:flex;gap:16px;align-items:flex-start;">
+                    <div style="width:40px;height:40px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--orange)" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:#fff;margin-bottom:4px;">Project-aware intelligence</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">The Coach automatically reads your active project — idea, hook score, script, shot plan — so every answer is specific to your exact video. No copy-pasting context.</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;align-items:flex-start;">
+                    <div style="width:40px;height:40px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--orange)" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:#fff;margin-bottom:4px;">Real-time streaming responses</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Answers start appearing instantly — no spinner, no waiting. Powered by Cerebras, one of the fastest AI inference platforms on the planet.</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;align-items:flex-start;">
+                    <div style="width:40px;height:40px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--orange)" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:#fff;margin-bottom:4px;">Persistent chat history</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Your coaching conversations are saved per project. Come back tomorrow and pick up exactly where you left off — the Coach remembers.</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;align-items:flex-start;">
+                    <div style="width:40px;height:40px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--orange)" viewBox="0 0 24 24" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:#fff;margin-bottom:4px;">Elite creator personality</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Confident, direct, zero fluff. The Coach talks like a top creator — not a corporate chatbot. Expect sharp advice, the occasional "SIUUU 🏆", and no wasted words.</div>
+                    </div>
+                </div>
+                <a href="./siuu-auth.html" style="display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:#fff;font-weight:600;font-size:14px;padding:12px 24px;border-radius:12px;text-decoration:none;width:fit-content;transition:background 0.2s,transform 0.2s;" onmouseover="this.style.background='#ea6c00';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='var(--orange)';this.style.transform='translateY(0)'">
+                    Try AI Coach free
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                </a>
+            </div>
+
         </div>
     </div>
 </section>
@@ -1624,6 +1764,13 @@
                             <p>Export your AI-generated plan, shoot your video, and apply the Editing Guide. Your best video is always your next one.</p>
                         </div>
                     </div>
+                    <div class="how-step reveal reveal-delay-5" style="border-left:2px solid rgba(249,115,22,0.5);padding-left:24px;">
+                        <div class="step-num" style="background:linear-gradient(135deg,var(--orange),#f97316);color:#fff;">04</div>
+                        <div class="step-content">
+                            <h4 style="color:var(--orange);">Ask your AI Coach anytime</h4>
+                            <p>Stuck at any step? Hit the orange chat button in the corner. The AI Coach reads your active project and gives tailored, specific advice — not generic tips. Like having a pro creator on call, 24/7.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1653,12 +1800,12 @@
     <div class="container">
         <div class="cta-box reveal">
             <h2>Ready to create your best content?</h2>
-            <p>Join creators using SIUU Studio to plan, produce, and publish videos that grow their audience.</p>
+            <p>Join creators using SIUU Studio to plan, produce, and publish videos that grow their audience — with an AI Coach that knows your project inside out.</p>
             <a href="./siuu-auth.html" class="btn-cta">
                 Get started for free
                 <svg class="btn-cta-arrow" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
             </a>
-            <div class="cta-note">No credit card required · Free forever plan</div>
+            <div class="cta-note">No credit card required · Free forever plan · AI Coach included</div>
         </div>
     </div>
 </section>
