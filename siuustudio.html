@@ -3755,9 +3755,13 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         );
     };
 
+    let _profileButtonRef = null; // module-level ref shared between Header and ProfileDropdown
+
     const Header = () => {
         const { currentProject, clearActiveProject, sidebarOpen, setSidebarOpen, profileDropdown, setProfileDropdown, currentUser } = useStore();
         const buttonRef = useRef(null);
+
+        useEffect(() => { _profileButtonRef = buttonRef; }, []);
 
         const toggleDropdown = () => {
             if (profileDropdown) { setProfileDropdown(null); return; }
@@ -3832,13 +3836,14 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         useEffect(() => {
             if (!profileDropdown) return;
             const handler = (e) => {
+                const btn = _profileButtonRef?.current;
+                if (btn && btn.contains(e.target)) return; // let the button's own onClick handle it
                 if (ref.current && !ref.current.contains(e.target)) setProfileDropdown(null);
             };
-            // Delay so the opening click doesn't immediately close it
             const t = setTimeout(() => {
                 document.addEventListener('mousedown', handler);
                 document.addEventListener('touchstart', handler);
-            }, 100);
+            }, 50);
             return () => {
                 clearTimeout(t);
                 document.removeEventListener('mousedown', handler);
