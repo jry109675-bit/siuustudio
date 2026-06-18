@@ -3227,21 +3227,20 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
         // ── Load today's session on open ───────────────────────────────────────
         useEffect(() => {
-            if (!chatOpen || !currentUser) return;
+            if (!chatOpen || !currentUser || !currentProject) return;
             setShowHistory(false);
             setViewingPast(false);
             (async () => {
                 setLoadingHistory(true);
                 try {
                     const today = new Date().toISOString().split('T')[0];
-                    const sessionKey = currentProject
-                        ? `project-${currentProject.id}-${today}`
-                        : `general-${today}`;
+                    const sessionKey = `project-${currentProject.id}-${today}`;
 
                     const { data: existingSession } = await window._sb
                         .from('coach_chat_sessions')
                         .select('id, messages')
                         .eq('user_id', currentUser.id)
+                        .eq('project_id', currentProject.id)
                         .eq('session_key', sessionKey)
                         .maybeSingle();
 
@@ -3251,12 +3250,10 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                             setChatMessages(existingSession.messages);
                         }
                     } else {
-                        const initMsg = currentProject
-                            ? { id: crypto.randomUUID(), role: 'assistant', content: `SIUUU! 🏆 Let's work on **${currentProject.name}**. What do you need help with?` }
-                            : { id: 'init', role: 'assistant', content: 'SIUUU! 🏆 I\'m your AI Coach powered by **SIUU AI**! Ask me anything about video creation, editing, VFX, or viral content strategy.' };
+                        const initMsg = { id: crypto.randomUUID(), role: 'assistant', content: `SIUUU! 🏆 Let's work on **${currentProject.name}**. What do you need help with?` };
                         const { data: newSession } = await window._sb
                             .from('coach_chat_sessions')
-                            .insert({ user_id: currentUser.id, session_key: sessionKey, project_id: currentProject?.id || null, messages: [initMsg] })
+                            .insert({ user_id: currentUser.id, session_key: sessionKey, project_id: currentProject.id, messages: [initMsg] })
                             .select('id')
                             .single();
                         if (newSession) {
@@ -3285,6 +3282,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 const { data, error } = await window._sb
                     .from('coach_chat_sessions')
                     .select('id, session_key, messages, updated_at, created_at, project_id')
+                    .eq('project_id', currentProject?.id ?? null)
                     .order('created_at', { ascending: false })
                     .limit(60);
                 if (error) throw error;
@@ -3326,20 +3324,22 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             }
         };
 
-        // ── Start a brand-new session (today's slot key gets a suffix) ──────────
+        // ── Start a brand-new session (project-scoped; requires an active project) ──
         const startNewChat = async () => {
+            if (!currentProject) {
+                toast('Select a project first to start an AI Coach chat.', 'error');
+                return;
+            }
             setViewingPast(false);
             setShowHistory(false);
             const now = new Date();
-            const sessionKey = currentProject
-                ? `project-${currentProject.id}-${now.toISOString()}`
-                : `general-${now.toISOString()}`;
-            const initMsg = { id: crypto.randomUUID(), role: 'assistant', content: 'SIUUU! 🏆 Fresh start! What are we creating?' };
+            const sessionKey = `project-${currentProject.id}-${now.toISOString()}`;
+            const initMsg = { id: crypto.randomUUID(), role: 'assistant', content: `SIUUU! 🏆 Fresh start on **${currentProject.name}**! What are we creating?` };
             setChatMessages([initMsg]);
             try {
                 const { data: newSession } = await window._sb
                     .from('coach_chat_sessions')
-                    .insert({ user_id: (currentUser?.id ?? window._sbUser?.id), session_key: sessionKey, project_id: currentProject?.id || null, messages: [initMsg] })
+                    .insert({ user_id: (currentUser?.id ?? window._sbUser?.id), session_key: sessionKey, project_id: currentProject.id, messages: [initMsg] })
                     .select('id')
                     .single();
                 if (newSession) { sessionIdRef.current = newSession.id; setSessionId(newSession.id); }
@@ -3348,6 +3348,10 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
         const handleSend = async () => {
             if (!input.trim() || isLoading) return;
+            if (!currentProject) {
+                toast('Select a project first to chat with your AI Coach.', 'error');
+                return;
+            }
             // If viewing a past session, resume it first
             if (viewingPast) setViewingPast(false);
             const userMsg = input.trim();
@@ -3420,9 +3424,16 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         return (
             <>
                 {!chatOpen && (
-                    <button onClick={() => setChatOpen(true)} className="fixed bottom-16 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-2xl shadow-xl shadow-orange-500/30 flex items-center justify-center transition-all hover:scale-105 z-50 glow-pulse">
-                        <Icon path={I.message} className="w-6 h-6 text-white" />
-                    </button>
+                    <div className="fixed bottom-16 right-6 z-50 flex flex-col items-end gap-2">
+                        {!currentProject && (
+                            <div className="bg-slate-800 border border-orange-500/30 text-orange-300 text-[11px] px-3 py-1.5 rounded-xl shadow-lg max-w-[180px] text-center leading-snug">
+                                Select a project to use AI Coach
+                            </div>
+                        )}
+                        <button onClick={() => { if (!currentProject) { toast('Select a project first to use AI Coach.', 'error'); return; } setChatOpen(true); }} className="w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-2xl shadow-xl shadow-orange-500/30 flex items-center justify-center transition-all hover:scale-105 glow-pulse">
+                            <Icon path={I.message} className="w-6 h-6 text-white" />
+                        </button>
+                    </div>
                 )}
                 {chatOpen && (
                     <div className="fixed bottom-6 right-6 w-96 h-[560px] glass rounded-2xl shadow-2xl flex flex-col z-50 slide-up border border-orange-500/10" style={{ maxWidth: 'calc(100vw - 48px)' }}>
@@ -3443,7 +3454,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                                             <span className="text-xs text-slate-500">
-                                                {viewingPast ? 'Viewing past chat' : hasProject ? currentProject.name : 'General Mode'}
+                                                {viewingPast ? 'Viewing past chat' : hasProject ? currentProject.name : 'No project selected'}
                                             </span>
                                         </div>
                                     )}
@@ -3478,7 +3489,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                                 {!loadingPastSessions && pastSessions.length === 0 && (
                                     <div className="flex flex-col items-center justify-center py-12 text-center px-6">
                                         <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" className="text-slate-600 mb-3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        <p className="text-xs text-slate-500">No past chats yet. Start a conversation!</p>
+                                        <p className="text-xs text-slate-500">No past chats for this project yet.</p>
                                     </div>
                                 )}
                                 {!loadingPastSessions && Object.entries(groupedSessions).map(([label, sessions]) => (
@@ -3550,7 +3561,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                                 {!viewingPast && (
                                     <div className="p-3 border-t border-white/5 flex-shrink-0">
                                         <div className="flex gap-2">
-                                            <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={hasProject ? `Ask about ${currentProject.name}...` : 'Ask your AI Coach...'} disabled={isLoading || loadingHistory} className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-xl text-white text-xs focus:ring-2 focus:ring-orange-500 outline-none placeholder-slate-600 disabled:opacity-40" />
+                                            <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={hasProject ? `Ask about ${currentProject.name}...` : 'Select a project to start...'} disabled={isLoading || loadingHistory} className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-xl text-white text-xs focus:ring-2 focus:ring-orange-500 outline-none placeholder-slate-600 disabled:opacity-40" />
                                             {isLoading ? <button onClick={() => abortRef.current?.abort()} className="px-3 py-2 bg-red-600/80 hover:bg-red-600 rounded-xl"><Icon path={I.stop} className="w-4 h-4 text-white" /></button> : <button onClick={handleSend} disabled={!input.trim() || loadingHistory} className="px-3 py-2 bg-orange-500 hover:bg-orange-600 rounded-xl disabled:opacity-40"><Icon path={I.send} className="w-4 h-4 text-white" /></button>}
                                         </div>
                                     </div>
