@@ -3774,7 +3774,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const initials   = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
         return (
-            <header className="h-14 border-b border-white/5 bg-slate-950/50 backdrop-blur flex items-center justify-between px-6 flex-shrink-0">
+            <header className="h-14 border-b border-white/5 bg-slate-950/50 backdrop-blur flex items-center justify-between px-6 flex-shrink-0 relative z-50">
                 <div className="flex items-center gap-4">
                     {/* Mobile menu button */}
                     <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors">
