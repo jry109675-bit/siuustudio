@@ -40,26 +40,28 @@
     <!-- ── Babel JSX compile-error interceptor ────────────────────────────── -->
     <script>
     (function() {
-        // Babel processes <script type="text/babel"> synchronously on DOMContentLoaded.
-        // We patch Babel.transform ASAP to catch line-level JSX syntax errors.
         function patchBabel() {
-            if (!window.Babel || !Babel.transform) return;
+            if (!window.Babel || !Babel.transform || Babel._siuuPatched) return;
             var _orig = Babel.transform.bind(Babel);
             Babel.transform = function(code, opts) {
                 try {
                     return _orig(code, opts);
                 } catch(e) {
                     var loc = e.loc ? ' [line ' + e.loc.line + ', col ' + e.loc.column + ']' : '';
-                    console.error('❌ BABEL JSX ERROR' + loc + ': ' + e.message);
+                    console.error('❌ BABEL JSX COMPILE ERROR' + loc + ': ' + e.message);
                     throw e;
                 }
             };
+            Babel._siuuPatched = true;
             console.log('✅ Babel transform patched for error reporting');
         }
-        // Try immediately in case Babel is already loaded
+        // Poll every 5ms until Babel is available (it loads before DOMContentLoaded fires)
+        var tries = 0;
+        var poll = setInterval(function() {
+            if (patchBabel() !== undefined || ++tries > 400) clearInterval(poll);
+            if (Babel && Babel._siuuPatched) clearInterval(poll);
+        }, 5);
         patchBabel();
-        // Also try after scripts finish loading
-        document.addEventListener('DOMContentLoaded', patchBabel);
     })();
     </script>
 
@@ -311,6 +313,7 @@
 </script>
 
 <script type="text/babel" data-presets="env,react">
+    console.log('[babel] Script block starting execution...');
     const useState = React.useState;
     const useEffect = React.useEffect;
     const useRef = React.useRef;
@@ -983,6 +986,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
     const StoreContext = createContext(null);
 
     const StoreProvider = ({ children }) => {
+        console.log('[StoreProvider] initialising...');
         const [activeTab, setActiveTab] = useState('dashboard');
         const [activeProvider, setActiveProvider] = useState(DEFAULT_PROVIDER);
         // ─── Projects: Supabase is the single source of truth ────────────────────
@@ -3721,6 +3725,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
     };
 
     const App = () => {
+        console.log('[App] rendering...');
         const { banInfo, banCheckDone } = useStore();
 
         // Full-app takeover while a ban check is pending or active — blocks
@@ -3754,9 +3759,16 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         );
     };
 
-    ReactDOM.createRoot(document.getElementById('root')).render(
-        <ToastProvider><StoreProvider><App /></StoreProvider></ToastProvider>
-    );
+    try {
+        console.log('[app] Mounting React app...');
+        ReactDOM.createRoot(document.getElementById('root')).render(
+            <ToastProvider><StoreProvider><App /></StoreProvider></ToastProvider>
+        );
+        console.log('[app] React mounted successfully');
+    } catch(e) {
+        console.error('[app] CRASH during React mount: ' + e.message);
+        if (e.stack) console.error('[app] Stack: ' + String(e.stack).slice(0, 600));
+    }
 </script>
 </body>
 </html>
