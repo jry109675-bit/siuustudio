@@ -3214,6 +3214,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [isLoading, setIsLoading] = useState(false);
         const [streaming, setStreaming] = useState('');
         const [sessionId, setSessionId] = useState(null);
+        const sessionIdRef = useRef(null); // ref so closures always read the live value
         const [loadingHistory, setLoadingHistory] = useState(false);
         // History panel state
         const [showHistory, setShowHistory] = useState(false);
@@ -3245,7 +3246,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                         .maybeSingle();
 
                     if (existingSession) {
-                        setSessionId(existingSession.id);
+                        sessionIdRef.current = existingSession.id; setSessionId(existingSession.id);
                         if (existingSession.messages && existingSession.messages.length > 0) {
                             setChatMessages(existingSession.messages);
                         }
@@ -3259,7 +3260,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                             .select('id')
                             .single();
                         if (newSession) {
-                            setSessionId(newSession.id);
+                            sessionIdRef.current = newSession.id; setSessionId(newSession.id);
                             setChatMessages([initMsg]);
                         }
                     }
@@ -3305,7 +3306,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
         // ── Continue a historical session (make it the active one) ─────────────
         const continueSession = async (session) => {
-            setSessionId(session.id);
+            sessionIdRef.current = session.id; setSessionId(session.id);
             setChatMessages(session.messages || []);
             setViewingPast(false);
             setShowHistory(false);
@@ -3313,12 +3314,13 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
         // ── Save messages to Supabase ───────────────────────────────────────────
         const persistMessages = async (messages) => {
-            if (!sessionId) return;
+            const sid = sessionIdRef.current; // always the live value — avoids stale closure
+            if (!sid) return;
             try {
                 await window._sb
                     .from('coach_chat_sessions')
                     .update({ messages, updated_at: new Date().toISOString() })
-                    .eq('id', sessionId);
+                    .eq('id', sid);
             } catch (err) {
                 console.warn('Could not persist chat:', err.message);
             }
@@ -3337,10 +3339,10 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             try {
                 const { data: newSession } = await window._sb
                     .from('coach_chat_sessions')
-                    .insert({ user_id: currentUser.id, session_key: sessionKey, project_id: currentProject?.id || null, messages: [initMsg] })
+                    .insert({ user_id: (currentUser?.id ?? window._sbUser?.id), session_key: sessionKey, project_id: currentProject?.id || null, messages: [initMsg] })
                     .select('id')
                     .single();
-                if (newSession) setSessionId(newSession.id);
+                if (newSession) { sessionIdRef.current = newSession.id; setSessionId(newSession.id); }
             } catch (err) { console.warn('Could not create new session:', err.message); }
         };
 
