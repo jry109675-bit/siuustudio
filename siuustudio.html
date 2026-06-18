@@ -3756,7 +3756,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
     };
 
     const Header = () => {
-        const { currentProject, clearActiveProject, sidebarOpen, setSidebarOpen, profileDropdown, setProfileDropdown } = useStore();
+        const { currentProject, clearActiveProject, sidebarOpen, setSidebarOpen, profileDropdown, setProfileDropdown, currentUser } = useStore();
         const buttonRef = useRef(null);
 
         const toggleDropdown = () => {
