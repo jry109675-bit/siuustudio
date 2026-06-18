@@ -3756,7 +3756,9 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
     const Header = () => {
         const { currentProject, clearActiveProject, sidebarOpen, setSidebarOpen, currentUser, userRole, setVarRoomOpen, setReportUserOpen } = useStore();
         const [profileOpen, setProfileOpen] = useState(false);
+        const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
         const profileRef = useRef(null);
+        const buttonRef = useRef(null);
 
         // Close dropdown when clicking outside
         useEffect(() => {
@@ -3766,6 +3768,14 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             document.addEventListener('mousedown', handler);
             return () => document.removeEventListener('mousedown', handler);
         }, []);
+
+        const openDropdown = () => {
+            if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setDropdownPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+            }
+            setProfileOpen(o => !o);
+        };
 
         const meta       = currentUser?.user_metadata ?? {};
         const avatarUrl  = meta.avatar_url || meta.picture || null;
@@ -3807,9 +3817,10 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 <ProviderSwitcher />
 
                 {/* Profile avatar + dropdown */}
-                <div className="relative z-50" ref={profileRef}>
+                <div className="relative" ref={profileRef}>
                     <button
-                        onClick={() => setProfileOpen(o => !o)}
+                        ref={buttonRef}
+                        onClick={openDropdown}
                         className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl hover:bg-slate-800/60 transition-all border border-transparent hover:border-white/5 group"
                         title="Account"
                     >
@@ -3827,7 +3838,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
                     {/* Dropdown */}
                     {profileOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-60 glass rounded-2xl shadow-2xl border border-white/5 z-50 fade-in overflow-y-auto" style={{maxHeight: 'calc(100vh - 80px)'}}>
+                        <div className="fixed w-60 glass rounded-2xl shadow-2xl border border-white/5 z-[999] fade-in overflow-y-auto" style={{top: dropdownPos.top, right: dropdownPos.right, maxHeight: 'calc(100vh - 80px)'}}>
                             {/* Profile info header */}
                             <div className="flex items-center gap-3 px-4 py-4 border-b border-white/5">
                                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-orange-500/30">
