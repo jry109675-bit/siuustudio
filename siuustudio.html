@@ -3759,14 +3759,22 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
         const profileRef = useRef(null);
         const buttonRef = useRef(null);
+        const dropdownRef = useRef(null);
 
         // Close dropdown when clicking outside
         useEffect(() => {
             const handler = (e) => {
-                if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+                if (
+                    profileRef.current && !profileRef.current.contains(e.target) &&
+                    dropdownRef.current && !dropdownRef.current.contains(e.target)
+                ) setProfileOpen(false);
             };
             document.addEventListener('mousedown', handler);
-            return () => document.removeEventListener('mousedown', handler);
+            document.addEventListener('touchstart', handler);
+            return () => {
+                document.removeEventListener('mousedown', handler);
+                document.removeEventListener('touchstart', handler);
+            };
         }, []);
 
         const openDropdown = () => {
@@ -3838,7 +3846,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
                     {/* Dropdown */}
                     {profileOpen && (
-                        <div className="fixed w-60 glass rounded-2xl shadow-2xl border border-white/5 z-[999] fade-in overflow-y-auto" style={{top: dropdownPos.top, right: dropdownPos.right, maxHeight: 'calc(100vh - 80px)'}}>
+                        <div ref={dropdownRef} className="fixed w-60 glass rounded-2xl shadow-2xl border border-white/5 z-[999] fade-in overflow-y-auto" style={{top: dropdownPos.top, right: dropdownPos.right, maxHeight: 'calc(100vh - 80px)'}}>
                             {/* Profile info header */}
                             <div className="flex items-center gap-3 px-4 py-4 border-b border-white/5">
                                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-orange-500/30">
