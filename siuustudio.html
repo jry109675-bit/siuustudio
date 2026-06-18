@@ -13,7 +13,8 @@
     <script>console.log("⏳ Starting to load Tailwind...");</script>
     <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"
         onload="console.log('✅ Tailwind loaded')"
-        onerror="console.error('❌ FAILED: Tailwind CDN')"></script>
+        onerror="console.error('❌ FAILED: Tailwind CDN — this may be the culprit! Try disabling your adblocker or check CSP headers')"></script>
+    <script>console.log("✔ Past Tailwind tag");</script>
 
     <script>console.log("⏳ Starting to load React...");</script>
     <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"
@@ -255,8 +256,19 @@
 
     const AUTH_PAGE = './siuu-auth.html';
 
+    console.log('Auth guard: checking if supabase is defined — ' + (typeof supabase));
+    if (typeof supabase === 'undefined') {
+        console.error('CRITICAL: supabase is undefined — Supabase CDN failed to load');
+    }
+    console.log('Auth guard: checking if React is defined — ' + (typeof React));
+    if (typeof React === 'undefined') {
+        console.error('CRITICAL: React is undefined — React CDN failed to load');
+    }
+
     const { createClient } = supabase;
+    console.log('Auth guard: createClient obtained, initialising Supabase client...');
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+    console.log('Auth guard: Supabase client ready, running auth guard...');
 
     // Auth guard with session retry — written without arrow functions or
     // destructuring assignment to stay compatible with older Safari JS parsers.
