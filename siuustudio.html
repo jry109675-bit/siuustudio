@@ -10,17 +10,31 @@
 
     <meta name="google-site-verification" content="XOmKY03sG0shvdA2tDDB7eg72xNLVCU4aPRWtk5Eyb8" />
 
+    <script>console.log("⏳ Starting to load Tailwind...");</script>
     <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"
-        onerror="console.error('FAILED TO LOAD: Tailwind CDN')"></script>
+        onload="console.log('✅ Tailwind loaded')"
+        onerror="console.error('❌ FAILED: Tailwind CDN')"></script>
+
+    <script>console.log("⏳ Starting to load React...");</script>
     <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"
-        onerror="console.error('FAILED TO LOAD: React')"></script>
+        onload="console.log('✅ React loaded')"
+        onerror="console.error('❌ FAILED: React')"></script>
+
+    <script>console.log("⏳ Starting to load ReactDOM...");</script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"
-        onerror="console.error('FAILED TO LOAD: ReactDOM')"></script>
+        onload="console.log('✅ ReactDOM loaded')"
+        onerror="console.error('❌ FAILED: ReactDOM')"></script>
+
+    <script>console.log("⏳ Starting to load Babel...");</script>
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.10/babel.min.js" crossorigin="anonymous"
-        onerror="console.error('FAILED TO LOAD: Babel')"></script>
+        onload="console.log('✅ Babel loaded')"
+        onerror="console.error('❌ FAILED: Babel')"></script>
+
     <!-- ── Supabase Auth SDK ─────────────────────────────────────────── -->
+    <script>console.log("⏳ Starting to load Supabase...");</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"
-        onerror="console.error('FAILED TO LOAD: Supabase')"></script>
+        onload="console.log('✅ Supabase loaded')"
+        onerror="console.error('❌ FAILED: Supabase')"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
