@@ -950,7 +950,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [chatMessages, setChatMessages] = useState([
             { id: 'init', role: 'assistant', content: 'SIUUU! 🏆 I\'m your AI Coach powered by **SIUU AI**! Ask me anything about video creation, editing, VFX, or viral content strategy.' }
         ]);
-        const [sidebarOpen, setSidebarOpen] = useState(true);
+        const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
         const [howItWorksOpen, setHowItWorksOpen] = useState(false);
         const [currentUser, setCurrentUser] = useState(() => window._sbUser ?? null);
         const [legalModal, setLegalModal] = useState(null); // 'tos' | 'privacy' | null
@@ -3684,8 +3684,8 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
         return (
             <>
-                {/* Sidebar overlay on mobile */}
-                {!sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-30" />}
+                {/* Sidebar overlay on mobile — tap to close */}
+                {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-30" onClick={() => setSidebarOpen(false)} />}
 
                 {/* Sidebar panel */}
                 <div
