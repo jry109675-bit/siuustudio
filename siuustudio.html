@@ -774,7 +774,7 @@ ESTIMATED TIME: [duration]`;
             await this.streamChat([{ role: 'system', content: system }, ...messageHistory, { role: 'user', content: newMessage }],
                 { onChunk: (_, full) => { fullContent = full; onStream?.(full); }, signal });
             return { id: crypto.randomUUID(), role: 'assistant', content: fullContent, timestamp: new Date().toISOString() };
-        }
+        },
         async generateScript(ideaContext, platform, { onStream, signal } = {}) {
             const system = `You are SIUU STUDIO's elite Script Writer. Write a full, ready-to-film video script optimized for ${platform}.
 Format EXACTLY:
