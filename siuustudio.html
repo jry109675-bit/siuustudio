@@ -35,6 +35,33 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"
         onload="console.log('✅ Supabase loaded')"
         onerror="console.error('❌ FAILED: Supabase')"></script>
+
+    <!-- ── Babel JSX compile-error interceptor ────────────────────────────── -->
+    <script>
+    (function() {
+        // Babel processes <script type="text/babel"> synchronously on DOMContentLoaded.
+        // We patch Babel.transform ASAP to catch line-level JSX syntax errors.
+        function patchBabel() {
+            if (!window.Babel || !Babel.transform) return;
+            var _orig = Babel.transform.bind(Babel);
+            Babel.transform = function(code, opts) {
+                try {
+                    return _orig(code, opts);
+                } catch(e) {
+                    var loc = e.loc ? ' [line ' + e.loc.line + ', col ' + e.loc.column + ']' : '';
+                    console.error('❌ BABEL JSX ERROR' + loc + ': ' + e.message);
+                    throw e;
+                }
+            };
+            console.log('✅ Babel transform patched for error reporting');
+        }
+        // Try immediately in case Babel is already loaded
+        patchBabel();
+        // Also try after scripts finish loading
+        document.addEventListener('DOMContentLoaded', patchBabel);
+    })();
+    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -128,6 +155,7 @@
         <span style="color:#ef4444;font-weight:bold;font-size:11px;">🔴 SIUU DIAGNOSTIC</span>
         <div style="display:flex;gap:8px;align-items:center;">
             <button onclick="document.getElementById('siuu-diag-log').innerHTML=''" style="color:#ef4444;background:none;border:1px solid #ef444466;border-radius:3px;padding:1px 7px;font-size:10px;cursor:pointer;font-family:monospace;">clear</button>
+            <button onclick="(function(){var el=document.getElementById('siuu-diag-log');var text=el.innerText||el.textContent;navigator.clipboard.writeText(text).then(function(){var b=document.getElementById('siuu-copy-btn');b.textContent='copied!';setTimeout(function(){b.textContent='copy';},1500);});})()" id="siuu-copy-btn" style="color:#ef4444;background:none;border:1px solid #ef444466;border-radius:3px;padding:1px 7px;font-size:10px;cursor:pointer;font-family:monospace;">copy</button>
             <button onclick="(function(){var el=document.getElementById('siuu-diag');el.style.display=el.style.display==='none'?'flex':'none';})()" style="color:#ef4444;background:none;border:1px solid #ef444466;border-radius:3px;padding:1px 7px;font-size:10px;cursor:pointer;font-family:monospace;">hide</button>
         </div>
     </div>
