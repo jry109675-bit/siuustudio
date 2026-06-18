@@ -3668,7 +3668,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
     };
     // ─── Layout ──────────────────────────────────────────────────────────────────
     const Sidebar = () => {
-        const { activeTab, setActiveTab, sidebarOpen } = useStore();
+        const { activeTab, setActiveTab, sidebarOpen, setSidebarOpen } = useStore();
         const navItems = [
             { id: 'dashboard', label: 'Idea Generator', icon: 'sparkles' },
             { id: 'hook', label: 'Hook Analyzer', icon: 'target' },
@@ -3827,7 +3827,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
                     {/* Dropdown */}
                     {profileOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-60 glass rounded-2xl overflow-hidden shadow-2xl border border-white/5 z-50 fade-in">
+                        <div className="absolute right-0 top-full mt-2 w-60 glass rounded-2xl shadow-2xl border border-white/5 z-50 fade-in overflow-y-auto" style={{maxHeight: 'calc(100vh - 80px)'}}>
                             {/* Profile info header */}
                             <div className="flex items-center gap-3 px-4 py-4 border-b border-white/5">
                                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-orange-500/30">
