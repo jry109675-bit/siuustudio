@@ -3221,6 +3221,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [pastSessions, setPastSessions] = useState([]);
         const [loadingPastSessions, setLoadingPastSessions] = useState(false);
         const [viewingPast, setViewingPast] = useState(false); // true when browsing a historical session (read-only)
+        const [diagBanner, setDiagBanner] = useState(null); // {allCount, filteredCount} | null
         const bottomRef = useRef(null);
         const abortRef = useRef(null);
         const streamRef = useRef('');
@@ -3275,7 +3276,35 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const openHistory = async () => {
             setShowHistory(true);
             setLoadingPastSessions(true);
+            setDiagBanner(null);
             try {
+                // ── SIUU DIAGNOSTIC: query 1 — ALL rows this user can see (no project filter) ──
+                const { data: allRows, error: allErr } = await window._sb
+                    .from('coach_chat_sessions')
+                    .select('id, session_key, project_id, user_id, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(200);
+                console.log('[Coach History] ALL rows visible to this user:', allRows, allErr);
+
+                // ── SIUU DIAGNOSTIC: query 2 — same but filtered to current project ──
+                const { data: filteredRows, error: filteredErr } = await window._sb
+                    .from('coach_chat_sessions')
+                    .select('id, session_key, project_id, user_id, created_at')
+                    .eq('project_id', currentProject?.id)
+                    .order('created_at', { ascending: false })
+                    .limit(200);
+                console.log('[Coach History] project-filtered rows:', filteredRows, filteredErr);
+
+                // Surface the diagnostic in the UI (red banner)
+                setDiagBanner({
+                    allCount: (allRows || []).length,
+                    filteredCount: (filteredRows || []).length,
+                    allErr: allErr?.message || null,
+                    filteredErr: filteredErr?.message || null,
+                    projectId: currentProject?.id || '—',
+                    allRows: allRows || [],
+                });
+
                 // RLS already scopes results to the signed-in user — no .eq needed.
                 // Order by created_at so old sessions (which may lack a reliable
                 // updated_at) still appear correctly.
@@ -3469,6 +3498,28 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                         {/* ── History Panel ── */}
                         {showHistory && (
                             <div className="flex-1 overflow-y-auto">
+                                {diagBanner && (
+                                    <div style={{background:'#7f1d1d',border:'2px solid #ef4444',borderRadius:'10px',margin:'10px 12px 4px',padding:'10px 12px',fontFamily:'monospace',fontSize:'11px',color:'#fca5a5',lineHeight:'1.6'}}>
+                                        <div style={{color:'#ef4444',fontWeight:'bold',fontSize:'12px',marginBottom:'6px'}}>🔴 SIUU COACH DIAGNOSTIC</div>
+                                        <div><strong>Project ID:</strong> {diagBanner.projectId}</div>
+                                        <div style={{marginTop:'6px',color: diagBanner.allCount === 0 ? '#f87171' : '#86efac'}}>
+                                            <strong>[Coach History] ALL rows visible to this user:</strong> {diagBanner.allCount} row(s)
+                                            {diagBanner.allCount === 0 && <span style={{display:'block',color:'#fbbf24',marginTop:'2px'}}>⚠️ RLS is blocking reads — auth.uid() doesn't match user_id in stored rows</span>}
+                                            {diagBanner.allErr && <span style={{display:'block',color:'#f87171'}}>Error: {diagBanner.allErr}</span>}
+                                        </div>
+                                        <div style={{marginTop:'6px',color: diagBanner.filteredCount === 0 && diagBanner.allCount > 0 ? '#f87171' : diagBanner.filteredCount > 0 ? '#86efac' : '#94a3b8'}}>
+                                            <strong>[Coach History] project-filtered rows:</strong> {diagBanner.filteredCount} row(s)
+                                            {diagBanner.allCount > 0 && diagBanner.filteredCount === 0 && <span style={{display:'block',color:'#fbbf24',marginTop:'2px'}}>⚠️ project_id mismatch — rows exist but none match currentProject.id</span>}
+                                            {diagBanner.filteredErr && <span style={{display:'block',color:'#f87171'}}>Error: {diagBanner.filteredErr}</span>}
+                                        </div>
+                                        {diagBanner.allCount > 0 && diagBanner.filteredCount === 0 && (
+                                            <div style={{marginTop:'6px',color:'#94a3b8',fontSize:'10px'}}>
+                                                Stored project_ids: {diagBanner.allRows.slice(0,5).map(r => r.project_id).join(', ') || 'none'}
+                                            </div>
+                                        )}
+                                        <button onClick={() => setDiagBanner(null)} style={{marginTop:'8px',background:'#991b1b',border:'none',color:'#fca5a5',borderRadius:'6px',padding:'3px 10px',cursor:'pointer',fontSize:'11px'}}>Dismiss</button>
+                                    </div>
+                                )}
                                 <div className="px-4 pt-3 pb-2 flex-shrink-0">
                                     <button onClick={startNewChat} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 text-xs font-medium transition-colors">
                                         <Icon path={I.plus} className="w-3.5 h-3.5" /> Start new chat
