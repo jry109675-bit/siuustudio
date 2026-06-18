@@ -3221,6 +3221,9 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [pastSessions, setPastSessions] = useState([]);
         const [loadingPastSessions, setLoadingPastSessions] = useState(false);
         const [viewingPast, setViewingPast] = useState(false); // true when browsing a historical session (read-only)
+        const [renamingId, setRenamingId] = useState(null);   // session id currently being renamed
+        const [renameValue, setRenameValue] = useState('');
+        const [confirmDeleteId, setConfirmDeleteId] = useState(null); // session id awaiting delete confirm
         const bottomRef = useRef(null);
         const abortRef = useRef(null);
         const streamRef = useRef('');
@@ -3310,6 +3313,45 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             setShowHistory(false);
         };
 
+        // ── Delete a session ────────────────────────────────────────────────────
+        const deleteSession = async (sessionId) => {
+            try {
+                const { error } = await window._sb
+                    .from('coach_chat_sessions')
+                    .delete()
+                    .eq('id', sessionId);
+                if (error) throw error;
+                setPastSessions(prev => prev.filter(s => s.id !== sessionId));
+                // If we just deleted the active session, reset it
+                if (sessionIdRef.current === sessionId) {
+                    sessionIdRef.current = null; setSessionId(null);
+                    setChatMessages([{ id: crypto.randomUUID(), role: 'assistant', content: `SIUUU! 🏆 Let's work on **${currentProject?.name}**. What do you need help with?` }]);
+                }
+            } catch (err) {
+                toast('Could not delete chat: ' + err.message, 'error');
+            } finally {
+                setConfirmDeleteId(null);
+            }
+        };
+
+        // ── Rename a session (stores custom name in session_key metadata) ───────
+        const renameSession = async (sessionId) => {
+            const trimmed = renameValue.trim();
+            if (!trimmed) { setRenamingId(null); return; }
+            try {
+                const { error } = await window._sb
+                    .from('coach_chat_sessions')
+                    .update({ session_key: `custom-name:${trimmed}` })
+                    .eq('id', sessionId);
+                if (error) throw error;
+                setPastSessions(prev => prev.map(s => s.id === sessionId ? { ...s, session_key: `custom-name:${trimmed}` } : s));
+            } catch (err) {
+                toast('Could not rename chat: ' + err.message, 'error');
+            } finally {
+                setRenamingId(null); setRenameValue('');
+            }
+        };
+
         // ── Save messages to Supabase ───────────────────────────────────────────
         const persistMessages = async (messages) => {
             const sid = sessionIdRef.current; // always the live value — avoids stale closure
@@ -3389,6 +3431,12 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         };
 
         // ── Helpers ────────────────────────────────────────────────────────────
+        const sessionName = (session) => {
+            const key = session.session_key || '';
+            if (key.startsWith('custom-name:')) return key.slice('custom-name:'.length);
+            return null; // no custom name
+        };
+
         const formatSessionLabel = (session) => {
             // Try to extract a date from the session_key first;
             // fall back to created_at so all sessions get a valid label.
@@ -3490,16 +3538,60 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                                         <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-2 px-1">{label}</div>
                                         <div className="flex flex-col gap-1">
                                             {sessions.map(s => (
-                                                <button key={s.id} onClick={() => loadPastSession(s)}
-                                                    className="w-full text-left px-3 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-white/5 hover:border-orange-500/20 transition-all group">
-                                                    <div className="flex items-center justify-between gap-2 mb-1">
-                                                        <span className="text-[10px] text-slate-500 group-hover:text-orange-400 transition-colors">
-                                                            {s.project_id ? '📁 Project chat' : '💬 General chat'}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-600">{(s.messages || []).filter(m => m.role === 'user').length} msgs</span>
-                                                    </div>
-                                                    <p className="text-xs text-slate-300 leading-relaxed truncate">{sessionPreview(s)}</p>
-                                                </button>
+                                                <div key={s.id} className="rounded-xl bg-slate-800/60 border border-white/5 hover:border-orange-500/20 transition-all group overflow-hidden">
+                                                    {/* ── Rename input (shown when editing) ── */}
+                                                    {renamingId === s.id ? (
+                                                        <div className="px-3 py-2.5 flex items-center gap-2">
+                                                            <input
+                                                                autoFocus
+                                                                value={renameValue}
+                                                                onChange={e => setRenameValue(e.target.value)}
+                                                                onKeyDown={e => { if (e.key === 'Enter') renameSession(s.id); if (e.key === 'Escape') { setRenamingId(null); setRenameValue(''); } }}
+                                                                placeholder="Chat name…"
+                                                                className="flex-1 bg-slate-700 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none border border-orange-500/40 focus:border-orange-500 min-w-0"
+                                                            />
+                                                            <button onClick={() => renameSession(s.id)} className="text-[10px] text-orange-400 hover:text-orange-300 font-medium px-2 py-1 rounded-lg hover:bg-orange-500/10 transition-colors flex-shrink-0">Save</button>
+                                                            <button onClick={() => { setRenamingId(null); setRenameValue(''); }} className="text-[10px] text-slate-500 hover:text-slate-400 px-1.5 py-1 rounded-lg hover:bg-slate-700 transition-colors flex-shrink-0">✕</button>
+                                                        </div>
+                                                    ) : confirmDeleteId === s.id ? (
+                                                        /* ── Delete confirm ── */
+                                                        <div className="px-3 py-2.5 flex items-center gap-2">
+                                                            <span className="flex-1 text-xs text-red-400">Delete this chat?</span>
+                                                            <button onClick={() => deleteSession(s.id)} className="text-[10px] text-red-400 hover:text-red-300 font-medium px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors flex-shrink-0">Delete</button>
+                                                            <button onClick={() => setConfirmDeleteId(null)} className="text-[10px] text-slate-500 hover:text-slate-400 px-1.5 py-1 rounded-lg hover:bg-slate-700 transition-colors flex-shrink-0">Cancel</button>
+                                                        </div>
+                                                    ) : (
+                                                        /* ── Normal card view ── */
+                                                        <div className="flex items-stretch">
+                                                            <button onClick={() => loadPastSession(s)} className="flex-1 text-left px-3 py-2.5 min-w-0">
+                                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                                    <span className="text-[10px] text-slate-500 group-hover:text-orange-400 transition-colors truncate">
+                                                                        {sessionName(s) || (s.project_id ? '📁 Project chat' : '💬 General chat')}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-600 flex-shrink-0">{(s.messages || []).filter(m => m.role === 'user').length} msgs</span>
+                                                                </div>
+                                                                <p className="text-xs text-slate-300 leading-relaxed truncate">{sessionPreview(s)}</p>
+                                                            </button>
+                                                            {/* ── Action buttons (visible on hover) ── */}
+                                                            <div className="flex flex-col justify-center gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                                                <button
+                                                                    onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); setRenamingId(s.id); setRenameValue(sessionName(s) || ''); }}
+                                                                    title="Rename"
+                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-orange-400 hover:bg-slate-700 transition-colors"
+                                                                >
+                                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                                </button>
+                                                                <button
+                                                                    onClick={e => { e.stopPropagation(); setRenamingId(null); setConfirmDeleteId(s.id); }}
+                                                                    title="Delete"
+                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-700 transition-colors"
+                                                                >
+                                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
