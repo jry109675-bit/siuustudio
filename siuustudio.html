@@ -3278,16 +3278,18 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             setShowHistory(true);
             setLoadingPastSessions(true);
             try {
-                const query = window._sb
+                // RLS already scopes results to the signed-in user — no .eq needed.
+                // Order by created_at so old sessions (which may lack a reliable
+                // updated_at) still appear correctly.
+                const { data, error } = await window._sb
                     .from('coach_chat_sessions')
-                    .select('id, session_key, messages, updated_at, project_id')
-                    .eq('user_id', currentUser.id)
-                    .order('updated_at', { ascending: false })
-                    .limit(40);
-                const { data } = await query;
+                    .select('id, session_key, messages, updated_at, created_at, project_id')
+                    .order('created_at', { ascending: false })
+                    .limit(60);
+                if (error) throw error;
                 setPastSessions(data || []);
             } catch (err) {
-                console.warn('Could not load past sessions:', err.message);
+                console.warn('Could not load past sessions:', err.message, err);
                 setPastSessions([]);
             } finally {
                 setLoadingPastSessions(false);
@@ -3382,11 +3384,14 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
         // ── Helpers ────────────────────────────────────────────────────────────
         const formatSessionLabel = (session) => {
+            // Try to extract a date from the session_key first;
+            // fall back to created_at so all sessions get a valid label.
             const key = session.session_key || '';
-            // Extract the date portion from the key (last ISO date segment)
             const dateMatch = key.match(/(\d{4}-\d{2}-\d{2})/);
-            if (!dateMatch) return 'Chat';
-            const date = new Date(dateMatch[1]);
+            const rawDate = dateMatch ? dateMatch[1] : (session.created_at || session.updated_at || null);
+            if (!rawDate) return 'Older';
+            const date = new Date(rawDate);
+            if (isNaN(date.getTime())) return 'Older';
             const today = new Date(); today.setHours(0,0,0,0);
             const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
             if (date >= today) return 'Today';
