@@ -2740,7 +2740,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 </div>
 
                 {!projectsLoaded ? null : projects.length > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 border border-slate-700/60 rounded-xl focus-within:ring-2 focus-within:ring-orange-500">
+                    <div className="flex items-center gap-2 px-3 py-2.5 border border-slate-700/60 rounded-xl focus-within:ring-2 focus-within:ring-orange-500" style={{backgroundColor:'#0d1424'}}>
                         <svg className="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                         </svg>
@@ -2749,7 +2749,9 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Search projects..."
-                            className="flex-1 bg-transparent outline-none text-white text-sm placeholder-slate-500"
+                            autoComplete="off"
+                            className="flex-1 outline-none text-white text-sm placeholder-slate-500"
+                            style={{background:'transparent', WebkitTextFillColor:'#e2e8f0', caretColor:'#e2e8f0'}}
                         />
                         {search && (
                             <button onClick={() => setSearch('')} className="text-slate-500 hover:text-white transition-colors flex-shrink-0">
