@@ -5,6 +5,7 @@
 
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
+  Content-Type: application/javascript; charset=utf-8
   Service-Worker-Allowed: /
 
 /manifest.json
