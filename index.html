@@ -330,13 +330,17 @@
             animation: heroIn 0.7s cubic-bezier(.16,1,.3,1) 0.2s both;
         }
 
+        .hero-title .hero-title-line1 {
+            display: block;
+        }
+
         .hero-title .accent {
             background: linear-gradient(135deg, var(--orange), #fb923c, #fbbf24);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-decoration: none;
-            display: inline-block;
+            display: block;
         }
 
         .hero-sub {
@@ -1410,7 +1414,7 @@
     </div>
 
     <h1 class="hero-title">
-        Create content that<br>
+        <span class="hero-title-line1">Create content that</span>
         <span class="accent">actually performs</span>
     </h1>
 
