@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIUU STUDIO — AI Creator Platform</title>
+    <title>SIUU Studio - AI Creator Platform</title>
 
     <meta property="og:site_name" content="SIUU Studio" />
 
@@ -12,7 +12,7 @@
 
     <link rel="canonical" href="https://siuustudio.com" />
 
-    <meta name="description" content="The AI-powered workspace built for content creators. Generate ideas, analyze hooks, plan shots, and ship better content — faster.">
+    <meta name="description" content="The AI-powered workspace built for content creators. Generate ideas, analyze hooks, plan shots, and ship better content - faster.">
 
     <!-- 1. WebSite Schema (For the sitename above your URL) -->
     <script type="application/ld+json">
@@ -1058,23 +1058,40 @@
             position: relative;
             z-index: 1;
             border-top: 1px solid var(--border);
-            padding: 36px 24px;
+            padding: 64px 24px 36px 24px;
+            background: rgba(10,15,26,0.6);
         }
 
         .footer-inner {
             max-width: 1100px;
             margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            flex-wrap: wrap;
+        }
+
+        .footer-top {
+            display: grid;
+            grid-template-columns: 1.4fr repeat(4, 1fr);
+            gap: 40px;
+            margin-bottom: 56px;
+        }
+
+        @media (max-width: 860px) {
+            .footer-top {
+                grid-template-columns: 1fr 1fr;
+                gap: 32px;
+            }
+            .footer-brand-col { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 480px) {
+            .footer-top { grid-template-columns: 1fr; }
+            .footer-brand-col { grid-column: auto; }
         }
 
         .footer-logo {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 14px;
         }
 
         .footer-logo-icon {
@@ -1094,23 +1111,65 @@
             color: #fff;
         }
 
+        .footer-tagline {
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 220px;
+        }
+
+        .footer-col-heading {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted-hi);
+            margin-bottom: 16px;
+        }
+
+        .footer-col-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-col-links a {
+            font-size: 0.83rem;
+            color: var(--muted);
+            transition: color 0.2s;
+        }
+
+        .footer-col-links a:hover { color: var(--text); }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
         .footer-copy {
             font-size: 0.78rem;
             color: var(--muted);
         }
 
-        .footer-links {
+        .footer-bottom-links {
             display: flex;
-            gap: 24px;
+            gap: 20px;
         }
 
-        .footer-links a {
+        .footer-bottom-links a {
             font-size: 0.78rem;
             color: var(--muted);
             transition: color 0.2s;
         }
 
-        .footer-links a:hover { color: var(--text); }
+        .footer-bottom-links a:hover { color: var(--text); }
 
         /* ══════════════════════════════════════════════════════════
            LEGAL MODAL
@@ -1329,6 +1388,7 @@
         <li><a href="#features">Features</a></li>
         <li><a href="#ai-coach" style="color:var(--orange);">AI Coach</a></li>
         <li><a href="#how">How it works</a></li>
+        <li><a href="./docs.html">Docs</a></li>
     </ul>
 
     <div class="nav-cta">
@@ -1353,7 +1413,7 @@
     </h1>
 
     <p class="hero-sub">
-        SIUU Studio is your all-in-one AI workspace — from viral idea generation to
+        SIUU Studio is your all-in-one AI workspace - from viral idea generation to
         shot planning and editing guides. Plus a personal <strong style="color:var(--orange);">AI Coach</strong> that knows your project and answers every creator question in real time.
     </p>
 
@@ -1548,7 +1608,7 @@
                     </svg>
                 </div>
                 <div class="feature-name">Editing Guide</div>
-                <div class="feature-desc">Get a custom editing roadmap for your video — cut points, music cues, text overlay timing, and retention tactics.</div>
+                <div class="feature-desc">Get a custom editing roadmap for your video - cut points, music cues, text overlay timing, and retention tactics.</div>
                 <span class="feature-tag">Post-Production</span>
             </div>
 
@@ -1560,7 +1620,7 @@
                     </svg>
                 </div>
                 <div class="feature-name">Projects Studio</div>
-                <div class="feature-desc">Keep all your video projects organized in one place. Save ideas, notes, scripts, and AI outputs per project — never lose a concept again.</div>
+                <div class="feature-desc">Keep all your video projects organized in one place. Save ideas, notes, scripts, and AI outputs per project - never lose a concept again.</div>
                 <span class="feature-tag">Organized Workspace</span>
             </div>
 
@@ -1572,7 +1632,7 @@
                     </svg>
                 </div>
                 <div class="feature-name">Script Writer</div>
-                <div class="feature-desc">Generate full, ready-to-film video scripts in seconds. Hook, intro, sections, and CTA — all optimized for your chosen platform.</div>
+                <div class="feature-desc">Generate full, ready-to-film video scripts in seconds. Hook, intro, sections, and CTA - all optimized for your chosen platform.</div>
                 <span class="feature-tag">Content Creation</span>
             </div>
 
@@ -1612,7 +1672,7 @@
                 <span class="feature-tag">Planning</span>
             </div>
 
-            <!-- AI Coach — span full width for emphasis -->
+            <!-- AI Coach - span full width for emphasis -->
             <div class="feature-card reveal reveal-delay-2" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(249,115,22,0.12) 0%,rgba(249,115,22,0.03) 100%);border-color:rgba(249,115,22,0.35);position:relative;overflow:hidden;">
                 <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(249,115,22,0.18) 0%,transparent 70%);pointer-events:none;"></div>
                 <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
@@ -1623,7 +1683,7 @@
                     </div>
                     <div style="flex:1;min-width:240px;">
                         <div class="feature-name" style="color:#fff;font-size:1.1rem;">AI Coach <span style="font-size:0.75rem;color:var(--orange);font-weight:600;margin-left:6px;vertical-align:middle;">NEW</span></div>
-                        <div class="feature-desc" style="max-width:680px;">Your personal elite content strategist, available 24/7 inside the app. The AI Coach reads your active project — idea, hook score, script, shot plan — and gives specific, tailored advice for <em>your</em> video, not generic tips. Ask anything from "how do I improve my hook?" to "what B-roll should I shoot?" and get an instant answer that knows your exact context. Powered by NVIDIA NIM/Cerebras — one of the fastest AI inference platforms available.</div>
+                        <div class="feature-desc" style="max-width:680px;">Your personal elite content strategist, available 24/7 inside the app. The AI Coach reads your active project - idea, hook score, script, shot plan - and gives specific, tailored advice for <em>your</em> video, not generic tips. Ask anything from "how do I improve my hook?" to "what B-roll should I shoot?" and get an instant answer that knows your exact context. Powered by NVIDIA NIM/Cerebras - one of the fastest AI inference platforms available.</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
                             <span class="feature-tag" style="background:rgba(249,115,22,0.15);color:var(--orange);border-color:rgba(249,115,22,0.4);">Project-Aware</span>
                             <span class="feature-tag" style="background:rgba(249,115,22,0.15);color:var(--orange);border-color:rgba(249,115,22,0.4);">Real-Time Streaming</span>
@@ -1684,7 +1744,7 @@
                 </div>
                 <!-- Session rows with rename/delete hover actions -->
                 <div style="padding:0 12px;display:flex;flex-direction:column;gap:4px;">
-                    <!-- Session 1 — hovered state showing rename + delete icons -->
+                    <!-- Session 1 - hovered state showing rename + delete icons -->
                     <div style="border-radius:10px;background:rgba(30,41,59,0.8);border:1px solid rgba(249,115,22,0.2);overflow:hidden;">
                         <div style="display:flex;align-items:stretch;">
                             <div style="flex:1;padding:9px 10px;min-width:0;">
@@ -1705,7 +1765,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Session 2 — rename in progress -->
+                    <!-- Session 2 - rename in progress -->
                     <div style="border-radius:10px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.06);overflow:hidden;">
                         <div style="padding:8px 10px;display:flex;align-items:center;gap:6px;">
                             <div style="flex:1;background:#0f172a;border:1px solid rgba(249,115,22,0.4);border-radius:7px;padding:5px 9px;font-size:10px;color:#f97316;">Hook analysis deep dive…</div>
@@ -1713,7 +1773,7 @@
                             <div style="font-size:9px;color:#475569;white-space:nowrap;">✕</div>
                         </div>
                     </div>
-                    <!-- Session 3 — delete confirm -->
+                    <!-- Session 3 - delete confirm -->
                     <div style="border-radius:10px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.06);overflow:hidden;">
                         <div style="padding:8px 10px;display:flex;align-items:center;gap:6px;">
                             <span style="flex:1;font-size:10px;color:#f87171;">Delete this chat?</span>
@@ -1745,7 +1805,7 @@
                     </div>
                     <div>
                         <div style="font-weight:600;color:#fff;margin-bottom:4px;">Project-aware intelligence</div>
-                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">The Coach automatically reads your active project — idea, hook score, script, shot plan — so every answer is specific to your exact video. No copy-pasting context.</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">The Coach automatically reads your active project - idea, hook score, script, shot plan - so every answer is specific to your exact video. No copy-pasting context.</div>
                     </div>
                 </div>
                 <div style="display:flex;gap:16px;align-items:flex-start;">
@@ -1754,7 +1814,7 @@
                     </div>
                     <div>
                         <div style="font-weight:600;color:#fff;margin-bottom:4px;">Real-time streaming responses</div>
-                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Answers start appearing instantly — no spinner, no waiting. Powered by NVIDIA NIM/Cerebras, one of the fastest AI inference platforms on the planet.</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Answers start appearing instantly - no spinner, no waiting. Powered by NVIDIA NIM/Cerebras, one of the fastest AI inference platforms on the planet.</div>
                     </div>
                 </div>
                 <div style="display:flex;gap:16px;align-items:flex-start;">
@@ -1763,7 +1823,7 @@
                     </div>
                     <div>
                         <div style="font-weight:600;color:#fff;margin-bottom:4px;">Persistent chat history</div>
-                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Your coaching conversations are saved per project. Come back tomorrow and pick up exactly where you left off — the Coach remembers.</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Your coaching conversations are saved per project. Come back tomorrow and pick up exactly where you left off - the Coach remembers.</div>
                     </div>
                 </div>
                 <div style="display:flex;gap:16px;align-items:flex-start;">
@@ -1772,7 +1832,7 @@
                     </div>
                     <div>
                         <div style="font-weight:600;color:#fff;margin-bottom:4px;">Elite creator personality</div>
-                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Confident, direct, zero fluff. The Coach talks like a top creator — not a corporate chatbot. Expect sharp advice, the occasional "SIUUU 🏆", and no wasted words.</div>
+                        <div style="font-size:14px;color:#94a3b8;line-height:1.6;">Confident, direct, zero fluff. The Coach talks like a top creator - not a corporate chatbot. Expect sharp advice, the occasional "SIUUU 🏆", and no wasted words.</div>
                     </div>
                 </div>
                 <a href="./siuu-auth.html" style="display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:#fff;font-weight:600;font-size:14px;padding:12px 24px;border-radius:12px;text-decoration:none;width:fit-content;transition:background 0.2s,transform 0.2s;" onmouseover="this.style.background='#ea6c00';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='var(--orange)';this.style.transform='translateY(0)'">
@@ -1791,9 +1851,9 @@
         <div class="how-inner">
             <div>
                 <div class="section-label reveal">How it works</div>
-                <h2 class="section-title reveal reveal-delay-1">From idea to<br>published — fast</h2>
+                <h2 class="section-title reveal reveal-delay-1">From idea to<br>published - fast</h2>
                 <p class="section-sub reveal reveal-delay-2" style="margin-bottom:40px;">
-                    SIUU Studio removes the friction from content creation so you can focus on what matters — making great videos.
+                    SIUU Studio removes the friction from content creation so you can focus on what matters - making great videos.
                 </p>
 
                 <div class="how-steps">
@@ -1822,20 +1882,20 @@
                         <div class="step-num" style="background:linear-gradient(135deg,var(--orange),#f97316);color:#fff;">04</div>
                         <div class="step-content">
                             <h4 style="color:var(--orange);">Ask your AI Coach anytime</h4>
-                            <p>Stuck at any step? Hit the orange chat button in the corner. The AI Coach reads your active project and gives tailored, specific advice — not generic tips. Like having a pro creator on call, 24/7.</p>
+                            <p>Stuck at any step? Hit the orange chat button in the corner. The AI Coach reads your active project and gives tailored, specific advice - not generic tips. Like having a pro creator on call, 24/7.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="how-visual reveal reveal-delay-3">
-                <div class="how-visual-title">Live Preview — Idea Generator</div>
+                <div class="how-visual-title">Live Preview - Idea Generator</div>
                 <div class="prompt-bubble">
                     "Give me 5 viral YouTube ideas for a productivity channel targeting students"
                 </div>
                 <div class="response-bubble">
-                    <strong style="color:#fff;">1. "I studied 12 hours a day for 30 days"</strong> — document the transformation with before/after grades<br><br>
-                    <strong style="color:#fff;">2. "The $0 study setup that beats a $2000 desk"</strong> — high CTR contrast thumbnail<br><br>
+                    <strong style="color:#fff;">1. "I studied 12 hours a day for 30 days"</strong> - document the transformation with before/after grades<br><br>
+                    <strong style="color:#fff;">2. "The $0 study setup that beats a $2000 desk"</strong> - high CTR contrast thumbnail<br><br>
                     <strong style="color:#fff;">3. "I tried the MIT study method for a week"</strong>
                 </div>
                 <div class="idea-tags">
@@ -1854,7 +1914,7 @@
     <div class="container">
         <div class="cta-box reveal">
             <h2>Ready to create your best content?</h2>
-            <p>Join creators using SIUU Studio to plan, produce, and publish videos that grow their audience — with an AI Coach that knows your project inside out.</p>
+            <p>Join creators using SIUU Studio to plan, produce, and publish videos that grow their audience - with an AI Coach that knows your project inside out.</p>
             <a href="./siuu-auth.html" class="btn-cta">
                 Get started for free
                 <svg class="btn-cta-arrow" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
@@ -1867,15 +1927,62 @@
 <!-- ════════════════════════ FOOTER ════════════════════════ -->
 <footer>
     <div class="footer-inner">
-        <div class="footer-logo">
-            <div class="footer-logo-icon">S</div>
-            <span class="footer-brand">SIUU STUDIO</span>
+        <div class="footer-top">
+
+            <!-- Brand col -->
+            <div class="footer-brand-col">
+                <div class="footer-logo">
+                    <div class="footer-logo-icon">S</div>
+                    <span class="footer-brand">SIUU STUDIO</span>
+                </div>
+                <p class="footer-tagline">The all-in-one AI workspace built for content creators who want to grow faster.</p>
+            </div>
+
+            <!-- Features -->
+            <div>
+                <div class="footer-col-heading">Features</div>
+                <ul class="footer-col-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#ai-coach">AI Coach</a></li>
+                    <li><a href="#how">How it works</a></li>
+                </ul>
+            </div>
+
+            <!-- Resources -->
+            <div>
+                <div class="footer-col-heading">Resources</div>
+                <ul class="footer-col-links">
+                    <li><a href="./docs.html">Docs</a></li>
+                </ul>
+            </div>
+
+            <!-- Support -->
+            <div>
+                <div class="footer-col-heading">Support</div>
+                <ul class="footer-col-links">
+                    <li><a href="https://mail.google.com/mail/?view=cm&to=support@siuustudio.com" target="_blank" rel="noopener noreferrer">Contact Support</a></li>
+                    <li><a href="./docs.html#faq">FAQ</a></li>
+                </ul>
+            </div>
+
+            <!-- Legal -->
+            <div>
+                <div class="footer-col-heading">Legal</div>
+                <ul class="footer-col-links">
+                    <li><a href="#" onclick="openLegal('tos'); return false;">Terms of Service</a></li>
+                    <li><a href="#" onclick="openLegal('privacy'); return false;">Privacy Policy</a></li>
+                </ul>
+            </div>
+
         </div>
-        <div class="footer-copy">© 2026 SIUU Studio. All rights reserved.</div>
-        <div class="footer-links">
-            <a href="#" onclick="openLegal('privacy'); return false;">Privacy Policy</a>
-            <a href="#" onclick="openLegal('tos'); return false;">Terms of Service</a>
-            <a href="https://mail.google.com/mail/?view=cm&to=support@siuustudio.com" target="_blank" rel="noopener noreferrer">Support</a>
+
+        <div class="footer-bottom">
+            <div class="footer-copy">© 2026 SIUU Studio. All rights reserved.</div>
+            <div class="footer-bottom-links">
+                <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
+                <a href="#" onclick="openLegal('tos'); return false;">Terms</a>
+                <a href="https://mail.google.com/mail/?view=cm&to=support@siuustudio.com" target="_blank" rel="noopener noreferrer">Support</a>
+            </div>
         </div>
     </div>
 </footer>
@@ -1933,7 +2040,7 @@
                 <p><strong>Effective Date: June 16, 2026</strong></p>
 
                 <h2>1. Acceptance of Terms</h2>
-                <p>Welcome to SIUU Studio. By accessing or using the SIUU STUDIO — AI Creator Platform, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.</p>
+                <p>Welcome to SIUU Studio. By accessing or using the SIUU Studio - AI Creator Platform, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use our services.</p>
 
                 <h2>2. User Conduct &amp; Content Moderation</h2>
                 <p>You are responsible for the content you generate using our AI tools. You agree not to create or distribute content that is illegal, harmful, or violates the rights of others.</p>
@@ -1998,7 +2105,7 @@
 
                 <h2>6. AI Technology &amp; Transparency (AB 2013 / SB 942)</h2>
                 <p>SIUU Studio's AI features are powered by the Cerebras AI API. We have not fine-tuned, retrained, or substantially modified the underlying base model. All AI behavior is guided by proprietary system instructions designed to optimize content strategy for creators.</p>
-                <p>SIUU Studio does not collect neural data, biometric data, or any data generated by the brain or nervous system. All AI-generated content is intended as creative suggestions only — users remain fully responsible for reviewing and verifying any AI output before publishing.</p>
+                <p>SIUU Studio does not collect neural data, biometric data, or any data generated by the brain or nervous system. All AI-generated content is intended as creative suggestions only - users remain fully responsible for reviewing and verifying any AI output before publishing.</p>
             `
         }
     };
