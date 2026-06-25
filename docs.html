@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docs - SIUU Studio</title>
+    <meta name="description" content="Learn how to use SIUU Studio - the AI-powered workspace for content creators. Full documentation, guides, and FAQs.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="canonical" href="https://siuustudio.com/docs" />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --orange:       #f97316;
+            --orange-dim:   rgba(249,115,22,0.12);
+            --orange-glow:  rgba(249,115,22,0.45);
+            --orange-mid:   rgba(249,115,22,0.25);
+            --bg:           #0a0f1a;
+            --surface:      #111827;
+            --surface2:     #1a2234;
+            --border:       rgba(255,255,255,0.07);
+            --border-hi:    rgba(255,255,255,0.11);
+            --text:         #e2e8f0;
+            --muted:        #64748b;
+            --muted-hi:     #94a3b8;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.7;
+        }
+
+        h1, h2, h3, h4, h5 { font-family: 'Syne', sans-serif; }
+        a { text-decoration: none; color: inherit; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+
+        /* ── Background ─────────────────────────────────────── */
+        .bg-atmosphere {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .bg-orb {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px);
+        }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(249,115,22,0.09), transparent 70%);
+            top: -150px; left: 50%; transform: translateX(-50%);
+        }
+        .orb-2 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(249,115,22,0.05), transparent 70%);
+            bottom: 30%; right: -80px;
+        }
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── Navbar ─────────────────────────────────────────── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 100; padding: 0 24px; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(10,15,26,0.85);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .nav-logo-icon {
+            width: 34px; height: 34px;
+            background: var(--orange); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: #fff;
+        }
+        .nav-logo-text {
+            font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+            color: #fff; letter-spacing: -0.01em;
+        }
+        .nav-right {
+            display: flex; align-items: center; gap: 16px;
+        }
+        .nav-back {
+            font-size: 0.82rem; color: var(--muted);
+            display: flex; align-items: center; gap: 6px;
+            transition: color 0.2s;
+        }
+        .nav-back:hover { color: var(--text); }
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 18px;
+            background: var(--orange); color: #fff;
+            border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* ── Layout ─────────────────────────────────────────── */
+        .docs-layout {
+            display: flex;
+            padding-top: 64px;
+            min-height: 100vh;
+            position: relative; z-index: 1;
+        }
+
+        /* ── Sidebar ─────────────────────────────────────────── */
+        .sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            padding: 32px 0 40px 0;
+        }
+        .sidebar::-webkit-scrollbar { width: 0; }
+
+        .sidebar-section {
+            margin-bottom: 28px;
+            padding: 0 20px;
+        }
+        .sidebar-heading {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+            padding-left: 10px;
+        }
+        .sidebar-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sidebar-links a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 0.84rem;
+            color: var(--muted-hi);
+            transition: background 0.15s, color 0.15s;
+        }
+        .sidebar-links a:hover,
+        .sidebar-links a.active {
+            background: var(--orange-dim);
+            color: #fff;
+        }
+        .sidebar-links a.active {
+            color: var(--orange);
+            font-weight: 600;
+        }
+        .sidebar-links .dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+
+        /* ── Main content ────────────────────────────────────── */
+        .docs-main {
+            flex: 1;
+            min-width: 0;
+            padding: 48px 60px 80px 60px;
+            max-width: 860px;
+        }
+
+        @media (max-width: 900px) {
+            .docs-main { padding: 32px 24px 60px 24px; }
+            .sidebar { display: none; }
+        }
+
+        /* ── Docs typography ─────────────────────────────────── */
+        .docs-section {
+            margin-bottom: 72px;
+            scroll-margin-top: 88px;
+        }
+
+        .docs-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--orange);
+            margin-bottom: 10px;
+        }
+
+        .docs-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+        .docs-subtitle {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            margin-top: 40px;
+        }
+        .docs-h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+            margin-top: 28px;
+        }
+
+        .docs-p {
+            font-size: 0.93rem;
+            color: var(--muted-hi);
+            line-height: 1.8;
+            margin-bottom: 14px;
+        }
+
+        .docs-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 56px 0;
+        }
+
+        /* ── Step cards ──────────────────────────────────────── */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 24px 0;
+        }
+        .step-card {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px 22px;
+        }
+        .step-num {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.3);
+            color: var(--orange);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 0.8rem;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .step-body h4 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 0.92rem;
+            color: #fff; margin-bottom: 4px;
+        }
+        .step-body p {
+            font-size: 0.85rem; color: var(--muted-hi); line-height: 1.7;
+        }
+
+        /* ── Tool cards grid ─────────────────────────────────── */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 14px;
+            margin: 24px 0;
+        }
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            transition: border-color 0.2s;
+        }
+        .tool-card:hover { border-color: var(--border-hi); }
+        .tool-card-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 0.9rem;
+            color: #fff; margin-bottom: 6px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tool-tag {
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            padding: 2px 7px; border-radius: 20px;
+            background: var(--orange-dim);
+            color: var(--orange);
+            border: 1px solid rgba(249,115,22,0.25);
+        }
+        .tool-card-desc {
+            font-size: 0.82rem; color: var(--muted-hi); line-height: 1.65;
+        }
+
+        /* ── Tip / info callout ──────────────────────────────── */
+        .callout {
+            display: flex;
+            gap: 14px;
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.25);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin: 20px 0;
+        }
+        .callout-icon {
+            font-size: 1.1rem; flex-shrink: 0; margin-top: 1px;
+        }
+        .callout p {
+            font-size: 0.86rem; color: var(--text); line-height: 1.7;
+        }
+        .callout strong { color: #fff; }
+
+        /* ── FAQ ─────────────────────────────────────────────── */
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 20px;
+        }
+        .faq-item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .faq-item:hover { border-color: var(--border-hi); }
+        .faq-q {
+            width: 100%;
+            background: var(--surface);
+            border: none;
+            padding: 18px 20px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            transition: background 0.15s;
+        }
+        .faq-q:hover { background: var(--surface2); }
+        .faq-q svg {
+            flex-shrink: 0;
+            transition: transform 0.25s;
+            color: var(--muted);
+        }
+        .faq-item.open .faq-q svg { transform: rotate(180deg); }
+        .faq-a {
+            display: none;
+            padding: 0 20px 18px 20px;
+            background: var(--surface);
+            font-size: 0.86rem;
+            color: var(--muted-hi);
+            line-height: 1.75;
+        }
+        .faq-item.open .faq-a { display: block; }
+
+        /* ── Hero intro ──────────────────────────────────────── */
+        .docs-hero {
+            background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 36px 36px;
+            margin-bottom: 48px;
+        }
+        .docs-hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--orange);
+            background: var(--orange-dim);
+            border: 1px solid rgba(249,115,22,0.25);
+            border-radius: 20px; padding: 4px 12px;
+            margin-bottom: 16px;
+        }
+        .docs-hero h1 {
+            font-size: 1.9rem; font-weight: 800; color: #fff;
+            line-height: 1.2; margin-bottom: 12px;
+        }
+        .docs-hero p {
+            font-size: 0.92rem; color: var(--muted-hi); line-height: 1.75;
+            max-width: 600px;
+        }
+
+        /* ── Footer ─────────────────────────────────────────── */
+        .docs-footer {
+            border-top: 1px solid var(--border);
+            padding: 28px 60px;
+            display: flex; align-items: center;
+            justify-content: space-between; flex-wrap: wrap;
+            gap: 16px;
+            position: relative; z-index: 1;
+        }
+        .docs-footer-brand {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .docs-footer-icon {
+            width: 28px; height: 28px;
+            background: var(--orange); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 0.85rem; color: #fff;
+        }
+        .docs-footer-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 0.85rem; color: #fff;
+        }
+        .docs-footer-copy {
+            font-size: 0.76rem; color: var(--muted);
+        }
+        .docs-footer-links {
+            display: flex; gap: 20px; flex-wrap: wrap;
+        }
+        .docs-footer-links a {
+            font-size: 0.76rem; color: var(--muted);
+            transition: color 0.2s;
+        }
+        .docs-footer-links a:hover { color: var(--text); }
+
+        /* ── Mobile sidebar toggle ───────────────────────────── */
+        .mobile-sidebar-toggle {
+            display: none;
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            background: var(--orange);
+            color: #fff; border: none; cursor: pointer;
+            padding: 12px 22px; border-radius: 30px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 8px 32px rgba(249,115,22,0.4);
+        }
+        @media (max-width: 900px) {
+            .mobile-sidebar-toggle { display: flex; }
+        }
+
+        .mobile-sidebar-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            z-index: 300;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+        }
+        .mobile-sidebar-overlay.open { display: flex; align-items: flex-end; }
+        .mobile-sidebar-sheet {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            border-radius: 20px 20px 0 0;
+            width: 100%; padding: 28px 0 40px 0;
+            max-height: 70vh; overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-atmosphere">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- Navbar -->
+<nav>
+    <a href="/" class="nav-logo">
+        <div class="nav-logo-icon">S</div>
+        <span class="nav-logo-text">SIUU STUDIO</span>
+    </a>
+    <div class="nav-right">
+        <a href="/" class="nav-back">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+            Back to Home
+        </a>
+        <a href="./siuu-auth.html" class="btn-primary">
+            Open App
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </a>
+    </div>
+</nav>
+
+<div class="docs-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Getting Started</div>
+            <ul class="sidebar-links">
+                <li><a href="#intro" class="active"><span class="dot"></span>Introduction</a></li>
+                <li><a href="#quickstart"><span class="dot"></span>Quick Start</a></li>
+                <li><a href="#projects"><span class="dot"></span>Projects Studio</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-heading">AI Tools</div>
+            <ul class="sidebar-links">
+                <li><a href="#idea-generator"><span class="dot"></span>Idea Generator</a></li>
+                <li><a href="#hook-analyzer"><span class="dot"></span>Hook Analyzer</a></li>
+                <li><a href="#title-thumbnail"><span class="dot"></span>Title & Thumbnail Lab</a></li>
+                <li><a href="#shot-planner"><span class="dot"></span>Shot Planner</a></li>
+                <li><a href="#script-writer"><span class="dot"></span>Script Writer</a></li>
+                <li><a href="#editing-guide"><span class="dot"></span>Editing Guide</a></li>
+                <li><a href="#caption-generator"><span class="dot"></span>Caption Generator</a></li>
+                <li><a href="#trend-analyzer"><span class="dot"></span>Trend Analyzer</a></li>
+                <li><a href="#content-calendar"><span class="dot"></span>Content Calendar</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-heading">AI Coach</div>
+            <ul class="sidebar-links">
+                <li><a href="#ai-coach"><span class="dot"></span>What is AI Coach?</a></li>
+                <li><a href="#coach-tips"><span class="dot"></span>Getting the Best Results</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Account</div>
+            <ul class="sidebar-links">
+                <li><a href="#account"><span class="dot"></span>Sign In & Sign Up</a></li>
+                <li><a href="#data-sync"><span class="dot"></span>Data & Sync</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-heading">FAQ</div>
+            <ul class="sidebar-links">
+                <li><a href="#faq"><span class="dot"></span>Frequently Asked Questions</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="docs-main">
+
+        <!-- Hero -->
+        <div class="docs-hero">
+            <div class="docs-hero-badge">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                Documentation
+            </div>
+            <h1>SIUU Studio Docs</h1>
+            <p>Everything you need to go from a blank page to a published video - faster than ever. Learn how each AI tool works and how to get the most out of your workspace.</p>
+        </div>
+
+        <!-- ── INTRODUCTION ─────────────────────────────────── -->
+        <section class="docs-section" id="intro">
+            <div class="docs-label">Overview</div>
+            <h2 class="docs-title">What is SIUU Studio?</h2>
+            <p class="docs-p">SIUU Studio is an all-in-one AI workspace built for content creators. Instead of juggling a dozen different apps to plan, write, and optimize your videos, SIUU Studio puts every tool you need in one place - all connected to your projects.</p>
+            <p class="docs-p">Every tool is powered by AI, which means you get real output - not templates. The AI adapts to your niche, your audience, and your content style. And your AI Coach is always available to give you specific, tailored advice based on whatever you're working on right now.</p>
+
+            <div class="callout">
+                <div class="callout-icon">💡</div>
+                <p><strong>Powered by NVIDIA NIM and Cerebras</strong> - SIUU Studio uses some of the fastest AI inference platforms available. Responses start streaming instantly, with no waiting around.</p>
+            </div>
+
+            <h3 class="docs-subtitle">What's inside</h3>
+            <div class="tool-grid">
+                <div class="tool-card">
+                    <div class="tool-card-name">Idea Generator <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">Generate viral video ideas tailored to your niche on demand.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Hook Analyzer <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">Score your opening hook and find out why viewers might drop off.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Title & Thumbnail Lab <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">Craft click-worthy titles and thumbnail concepts engineered for CTR.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Shot Planner <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">Scene-by-scene shot lists, B-roll ideas, and pacing guides.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Script Writer <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">Full, ready-to-film video scripts in seconds.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Editing Guide <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">Cut points, music cues, text overlays, and retention tactics.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Caption Generator <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">3 viral caption options with platform-optimized hashtags.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Trend Analyzer <span class="tool-tag">Live Web</span></div>
+                    <div class="tool-card-desc">Top 5 trending topics and formats in your niche right now.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Content Calendar <span class="tool-tag">AI</span></div>
+                    <div class="tool-card-desc">A full 4-week posting schedule tailored to your niche.</div>
+                </div>
+                <div class="tool-card" style="border-color: rgba(249,115,22,0.3); background: linear-gradient(135deg, rgba(249,115,22,0.08), var(--surface));">
+                    <div class="tool-card-name" style="color: var(--orange);">AI Coach <span class="tool-tag">Always On</span></div>
+                    <div class="tool-card-desc">Your personal strategist that reads your active project and gives tailored advice, 24/7.</div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-name">Projects Studio</div>
+                    <div class="tool-card-desc">Organize all your ideas, scripts, hooks, and AI outputs per project.</div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── QUICK START ───────────────────────────────────── -->
+        <section class="docs-section" id="quickstart">
+            <div class="docs-label">Getting Started</div>
+            <h2 class="docs-title">Quick Start</h2>
+            <p class="docs-p">You can be generating your first video idea in under two minutes. Here's how:</p>
+
+            <div class="steps">
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <div class="step-body">
+                        <h4>Create a free account</h4>
+                        <p>Head to <a href="./siuu-auth.html" style="color:var(--orange);">siuustudio.com/siuu-auth.html</a> and sign up with your email. No credit card needed - the free plan gives you full access to all tools and the AI Coach.</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <div class="step-body">
+                        <h4>Open a tool and describe your niche</h4>
+                        <p>Click any tool from the left sidebar - for example, Idea Generator. Type in your channel niche (e.g. "productivity for college students" or "budget fitness"), choose your platform, and hit Generate.</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">03</div>
+                    <div class="step-body">
+                        <h4>Save your output to a project</h4>
+                        <p>Every AI output has a Save to Project button. This keeps your ideas, hooks, scripts, and shot plans organized and makes them available to the AI Coach.</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">04</div>
+                    <div class="step-body">
+                        <h4>Ask your AI Coach anything</h4>
+                        <p>Tap the orange chat button in the bottom-right corner at any time. Your Coach already knows what's in your active project and can give you specific advice for your exact video.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout" style="margin-top:28px;">
+                <div class="callout-icon">🚀</div>
+                <p><strong>Pro tip:</strong> Start with the Idea Generator, pick your favorite idea, then run Hook Analyzer on your opening line before you ever pick up a camera. This alone will dramatically improve your retention.</p>
+            </div>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── PROJECTS STUDIO ──────────────────────────────── -->
+        <section class="docs-section" id="projects">
+            <div class="docs-label">Core Feature</div>
+            <h2 class="docs-title">Projects Studio</h2>
+            <p class="docs-p">Projects Studio is your creative filing cabinet. Every video idea you work on gets its own project folder that stores all the AI outputs you've generated for it: the idea, the hook score, the script, the shot plan, and more.</p>
+
+            <h3 class="docs-subtitle">Creating a project</h3>
+            <p class="docs-p">In the Projects Studio tab (accessible from the left sidebar), type a name in the "New project name" field and click Create. You can also let the AI tools auto-create a project the first time you save an output - you'll see a prompt in the top bar when this happens.</p>
+
+            <h3 class="docs-subtitle">Switching projects</h3>
+            <p class="docs-p">Click any project card in the grid to make it the active project. The top bar will show the project name and all your AI tools will now save to and read from that project.</p>
+
+            <h3 class="docs-subtitle">Searching projects</h3>
+            <p class="docs-p">Use the search bar at the top of the Projects Studio grid to filter by name. The search is instant and case-insensitive. If no results match, a "No projects found" message appears. The search bar only appears when you have at least one project.</p>
+
+            <h3 class="docs-subtitle">Exporting a project</h3>
+            <p class="docs-p">Click the download icon on any project card to export all of its saved content as a file. This is useful for sharing your plan with an editor or keeping an offline backup.</p>
+
+            <h3 class="docs-subtitle">Deleting a project</h3>
+            <p class="docs-p">Click the trash icon on a project card. You'll be asked to confirm before anything is deleted. Deleted projects are removed from cloud sync and cannot be recovered, so make sure to export first if you need a copy.</p>
+
+            <div class="callout">
+                <div class="callout-icon">☁️</div>
+                <p><strong>Projects sync automatically.</strong> Everything saves to your account in real time. Switch between devices and your projects will always be up to date.</p>
+            </div>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── IDEA GENERATOR ───────────────────────────────── -->
+        <section class="docs-section" id="idea-generator">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Idea Generator</h2>
+            <p class="docs-p">The Idea Generator produces scroll-stopping video concepts tailored to your niche. It analyzes trending formats, evergreen angles, and viral patterns to give you ideas that are actually worth filming.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Enter your channel niche (be specific - "budget home gym workouts for beginners" will give better results than just "fitness"), choose your target platform (YouTube, TikTok, Instagram), then click Generate. You'll get multiple ideas with brief descriptions of the format and angle.</p>
+
+            <h3 class="docs-h3">Getting better results</h3>
+            <p class="docs-p">The more specific your niche description, the more targeted your ideas will be. Include your target audience if you know it. You can run it multiple times to get a fresh batch of ideas.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── HOOK ANALYZER ────────────────────────────────── -->
+        <section class="docs-section" id="hook-analyzer">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Hook Analyzer</h2>
+            <p class="docs-p">The first 3 seconds of a video decide whether a viewer stays or scrolls. The Hook Analyzer scores your opening line and tells you exactly what's working and what isn't - before you ever hit record.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Paste your planned opening line or on-screen text hook into the input field and click Analyze. You'll receive a score out of 10 along with a breakdown of why it's strong or weak, and specific suggestions to improve it.</p>
+
+            <h3 class="docs-h3">What makes a good hook</h3>
+            <p class="docs-p">Hooks that score highly typically do one of three things immediately: create curiosity ("You've been doing this wrong"), make a bold claim ("I doubled my views in 30 days"), or promise a specific outcome ("Watch this before you buy"). The Hook Analyzer will guide you toward whichever pattern fits your video best.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── TITLE & THUMBNAIL ─────────────────────────────── -->
+        <section class="docs-section" id="title-thumbnail">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Title & Thumbnail Lab</h2>
+            <p class="docs-p">Your title and thumbnail are the only two things a viewer sees before deciding whether to click. The Title & Thumbnail Lab generates combinations engineered for maximum click-through rate based on what's proven to work in your niche.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Describe your video concept and the Lab will generate multiple title options with thumbnail concept descriptions. Each title is analyzed for CTR potential, emotional hooks, and SEO-friendliness.</p>
+
+            <h3 class="docs-h3">Thumbnail concepts</h3>
+            <p class="docs-p">The Lab generates descriptive thumbnail concepts - not images. These are production briefs you can hand to a designer or use as a reference when making your own. They describe the layout, text, expression, and color palette that will perform best for your specific topic.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── SHOT PLANNER ──────────────────────────────────── -->
+        <section class="docs-section" id="shot-planner">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Shot Planner</h2>
+            <p class="docs-p">Walking into a shoot without a shot list wastes time and leads to boring footage. The Shot Planner gives you a complete scene-by-scene breakdown of everything you need to capture before you pick up a camera.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Describe your video idea and the Shot Planner will produce a structured list of shots: your main talking-head moments, B-roll suggestions, close-ups to grab, and pacing notes. You can also supply a script and it will generate a shot list directly from it.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── SCRIPT WRITER ─────────────────────────────────── -->
+        <section class="docs-section" id="script-writer">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Script Writer</h2>
+            <p class="docs-p">The Script Writer generates full, ready-to-film video scripts - not just outlines. Every script includes a hook, intro, structured body sections, and a call to action, all tuned to the platform and format you choose.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Give the Script Writer your video idea, your niche, your target platform, and an optional tone (educational, entertaining, motivational, etc.). It will write a complete script you can start filming from immediately.</p>
+
+            <h3 class="docs-h3">Editing your script</h3>
+            <p class="docs-p">All scripts are editable directly in the app. Treat the AI output as a first draft - adjust phrasing, add personal stories, and make it sound like you. The AI gives you the structure; you bring the personality.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── EDITING GUIDE ─────────────────────────────────── -->
+        <section class="docs-section" id="editing-guide">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Editing Guide</h2>
+            <p class="docs-p">Once you've filmed, the Editing Guide gives you a custom post-production roadmap: where to cut, what music fits the mood, when to add text overlays, and how to structure the edit for maximum retention.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Describe the video you've filmed (or paste your script) and the Editing Guide will produce a timestamped editing plan with specific recommendations for pacing, transitions, and engagement tactics tailored to your platform.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── CAPTION GENERATOR ────────────────────────────── -->
+        <section class="docs-section" id="caption-generator">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Caption Generator</h2>
+            <p class="docs-p">A strong caption increases watch time, saves, and shares. The Caption Generator produces 3 distinct caption options for every video, each optimized for different goals: reach, engagement, or saves.</p>
+
+            <h3 class="docs-h3">What you get</h3>
+            <p class="docs-p">Each caption option comes with platform-optimized hashtags, a recommended posting time for your niche, and power-word callouts explaining why the caption is structured the way it is.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── TREND ANALYZER ───────────────────────────────── -->
+        <section class="docs-section" id="trend-analyzer">
+            <div class="docs-label">AI Tool - Live Web</div>
+            <h2 class="docs-title">Trend Analyzer</h2>
+            <p class="docs-p">The Trend Analyzer pulls live web data to show you what's actually trending in your niche right now - not what was trending six months ago when an AI model was last trained.</p>
+
+            <div class="callout">
+                <div class="callout-icon">🌐</div>
+                <p><strong>This tool uses live web search.</strong> It queries multiple sources in real time before generating your trend report. Results reflect what's happening on social platforms today.</p>
+            </div>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Enter your niche and click Analyze. The tool will search the web, identify the top 5 trending topics and formats right now, and give you specific video angles to pursue and a note on what's already oversaturated to avoid.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── CONTENT CALENDAR ─────────────────────────────── -->
+        <section class="docs-section" id="content-calendar">
+            <div class="docs-label">AI Tool</div>
+            <h2 class="docs-title">Content Calendar</h2>
+            <p class="docs-p">Consistency is the single biggest factor in channel growth. The Content Calendar builds you a full 4-week posting schedule with a content idea, format suggestion, and goal for each video - so you always know what to make next.</p>
+
+            <h3 class="docs-h3">How to use it</h3>
+            <p class="docs-p">Tell the tool your niche and how often you can post per week. It will generate a realistic, niche-specific content plan that balances trending formats with evergreen content for long-term growth.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── AI COACH ─────────────────────────────────────── -->
+        <section class="docs-section" id="ai-coach">
+            <div class="docs-label">AI Coach</div>
+            <h2 class="docs-title">What is AI Coach?</h2>
+            <p class="docs-p">The AI Coach is your personal content strategist, available 24/7 inside the app. Unlike a generic chatbot, the Coach reads your currently active project - your idea, hook score, script, shot plan - and gives advice that's specific to your exact video, not boilerplate tips you've already read a hundred times.</p>
+
+            <h3 class="docs-subtitle">How to open it</h3>
+            <p class="docs-p">Tap the orange chat bubble in the bottom-right corner of the app at any time. It's available on every screen, so you can ask a question mid-script or mid-edit without losing your place.</p>
+
+            <h3 class="docs-subtitle">What it knows</h3>
+            <p class="docs-p">When you have an active project selected, the Coach automatically loads the context of everything in that project. You don't need to paste in your script or describe your idea - it already has it. Just ask your question and get an answer that actually fits your situation.</p>
+
+            <h3 class="docs-subtitle">Chat history</h3>
+            <p class="docs-p">Coaching sessions are saved per project. Close the app, come back tomorrow, and your conversation picks up exactly where it left off. The Coach remembers what you were working on.</p>
+
+            <div class="callout" style="margin-top:28px;">
+                <div class="callout-icon">⚡</div>
+                <p><strong>Answers start streaming instantly.</strong> Powered by NVIDIA NIM and Cerebras - one of the fastest AI inference platforms available. No spinner, no waiting.</p>
+            </div>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── COACH TIPS ────────────────────────────────────── -->
+        <section class="docs-section" id="coach-tips">
+            <div class="docs-label">AI Coach</div>
+            <h2 class="docs-title">Getting the Best Results from AI Coach</h2>
+            <p class="docs-p">The Coach is most useful when you have an active project loaded with content. Here are the types of questions it handles best:</p>
+
+            <div class="steps">
+                <div class="step-card">
+                    <div class="step-num">✓</div>
+                    <div class="step-body">
+                        <h4>"How do I improve my hook?"</h4>
+                        <p>With your hook score saved to the project, the Coach gives you specific rewrites - not generic advice about "creating curiosity".</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">✓</div>
+                    <div class="step-body">
+                        <h4>"What B-roll should I shoot for this video?"</h4>
+                        <p>Using your script and shot plan as context, the Coach suggests specific footage that will complement your talking-head shots.</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">✓</div>
+                    <div class="step-body">
+                        <h4>"Is this title strong enough?"</h4>
+                        <p>Paste a title option and the Coach will evaluate it against your niche, audience, and the content of your video.</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">✓</div>
+                    <div class="step-body">
+                        <h4>"Why isn't my channel growing?"</h4>
+                        <p>Describe your current situation and the Coach will give you a direct, no-fluff diagnosis with prioritized action steps.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── ACCOUNT ───────────────────────────────────────── -->
+        <section class="docs-section" id="account">
+            <div class="docs-label">Account</div>
+            <h2 class="docs-title">Sign In & Sign Up</h2>
+            <p class="docs-p">SIUU Studio uses email-based authentication. You'll receive a magic link or OTP to verify your email - no passwords to remember.</p>
+
+            <h3 class="docs-h3">Creating an account</h3>
+            <p class="docs-p">Go to <a href="./siuu-auth.html" style="color:var(--orange);">siuustudio.com/siuu-auth.html</a> and enter your email. You'll be asked to agree to the Terms of Service and Privacy Policy, then receive a verification email. Click the link in that email and you're in.</p>
+
+            <h3 class="docs-h3">Signing back in</h3>
+            <p class="docs-p">Return to the sign-in page, enter your email, and a new login link will be sent to your inbox. Links expire after a short time for security, so use it promptly.</p>
+
+            <h3 class="docs-h3">Password reset</h3>
+            <p class="docs-p">If you set a password and need to reset it, use the "Forgot password" link on the sign-in page. A reset link will be emailed to you.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── DATA & SYNC ───────────────────────────────────── -->
+        <section class="docs-section" id="data-sync">
+            <div class="docs-label">Account</div>
+            <h2 class="docs-title">Data & Sync</h2>
+            <p class="docs-p">All projects and AI outputs are stored in the cloud and tied to your account. There's no manual saving - every change syncs automatically in real time.</p>
+
+            <h3 class="docs-h3">Multi-device access</h3>
+            <p class="docs-p">Sign into any device and your projects will be there. Changes you make on one device will be reflected on all others.</p>
+
+            <h3 class="docs-h3">Data privacy</h3>
+            <p class="docs-p">SIUU Studio does not sell your data. AI-generated content is processed through NVIDIA NIM and Cerebras infrastructure. We do not collect biometric or neural data. For full details, see the <a href="#" onclick="window.opener ? null : window.location.href='/';" style="color:var(--orange);">Privacy Policy</a> on the home page.</p>
+        </section>
+
+        <hr class="docs-divider">
+
+        <!-- ── FAQ ──────────────────────────────────────────── -->
+        <section class="docs-section" id="faq">
+            <div class="docs-label">FAQ</div>
+            <h2 class="docs-title">Frequently Asked Questions</h2>
+
+            <div class="faq-list">
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        Is SIUU Studio free?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">Yes. SIUU Studio has a free plan that gives you full access to all AI tools and the AI Coach. No credit card is required to sign up.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        What platforms does SIUU Studio support?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">SIUU Studio is a web app that works on any device with a browser - desktop, tablet, and mobile. It's optimized for both iPhone and Android. No app download is required, though you can add it to your home screen for an app-like experience.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        Why isn't the search bar showing in Projects Studio?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">The search bar only appears when you have at least one project. This is intentional - there's nothing to search if your project list is empty. Create your first project and the search bar will appear automatically.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        Does the AI Coach know what I'm working on?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">Yes - when you have an active project selected (shown in the top bar), the AI Coach automatically reads everything saved in that project: your idea, hook score, script, shot plan, and more. You don't need to explain your video to it. Just ask your question.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        How is the Trend Analyzer different from the other tools?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">The Trend Analyzer is the only tool that uses live web search. It queries multiple sources in real time to tell you what's actually trending in your niche today, rather than relying on data from when the AI model was trained. The Content Calendar also uses live web data when available.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        Can I use SIUU Studio for any type of content creator?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">Absolutely. SIUU Studio works for creators in any niche - fitness, finance, gaming, cooking, education, lifestyle, tech, beauty, travel, and more. All tools adapt to the niche you provide. The more specific you are about your niche and audience, the better the output.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        Are my projects private?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">Yes. Your projects are tied to your account and are only accessible when you're signed in. We do not share or sell your content. See the Privacy Policy for full details.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        What AI models power SIUU Studio?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">SIUU Studio is powered by NVIDIA NIM and Cerebras - two of the fastest AI inference platforms available. Cerebras in particular is optimized for ultra-low latency, which is why responses start streaming almost instantly with no spinner or wait time.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        How do I get support?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">Email us at <a href="mailto:support@siuustudio.com" style="color:var(--orange);">support@siuustudio.com</a> and we'll get back to you as quickly as possible. You can also use the Support link in the footer of the home page which opens a pre-addressed email for you.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-q" onclick="toggleFaq(this)">
+                        Can I delete my account?
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="faq-a">Yes. To request account deletion, email <a href="mailto:support@siuustudio.com" style="color:var(--orange);">support@siuustudio.com</a> with the subject line "Account Deletion Request". We'll delete your account and all associated data within a reasonable timeframe.</div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Footer -->
+<footer class="docs-footer">
+    <div class="docs-footer-brand">
+        <div class="docs-footer-icon">S</div>
+        <span class="docs-footer-name">SIUU STUDIO</span>
+    </div>
+    <div class="docs-footer-copy">© 2026 SIUU Studio. All rights reserved.</div>
+    <div class="docs-footer-links">
+        <a href="/" >Home</a>
+        <a href="#" onclick="openLegalFromDocs('privacy'); return false;">Privacy Policy</a>
+        <a href="#" onclick="openLegalFromDocs('tos'); return false;">Terms of Service</a>
+        <a href="https://mail.google.com/mail/?view=cm&to=support@siuustudio.com" target="_blank" rel="noopener noreferrer">Support</a>
+    </div>
+</footer>
+
+<!-- Mobile nav sheet -->
+<button class="mobile-sidebar-toggle" onclick="openMobileNav()">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+    Jump to section
+</button>
+
+<div class="mobile-sidebar-overlay" id="mobileOverlay" onclick="closeMobileNav()">
+    <div class="mobile-sidebar-sheet" onclick="event.stopPropagation()">
+        <div style="padding:0 20px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-family:Syne,sans-serif;font-weight:700;font-size:0.95rem;color:#fff;">Sections</span>
+            <button onclick="closeMobileNav()" style="background:none;border:none;color:var(--muted);cursor:pointer;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:4px;">
+            <a href="#intro" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Introduction</a>
+            <a href="#quickstart" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Quick Start</a>
+            <a href="#projects" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Projects Studio</a>
+            <a href="#idea-generator" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Idea Generator</a>
+            <a href="#hook-analyzer" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Hook Analyzer</a>
+            <a href="#title-thumbnail" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Title & Thumbnail Lab</a>
+            <a href="#shot-planner" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Shot Planner</a>
+            <a href="#script-writer" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Script Writer</a>
+            <a href="#editing-guide" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Editing Guide</a>
+            <a href="#caption-generator" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Caption Generator</a>
+            <a href="#trend-analyzer" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Trend Analyzer</a>
+            <a href="#content-calendar" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">Content Calendar</a>
+            <a href="#ai-coach" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--orange);font-weight:600;">AI Coach</a>
+            <a href="#faq" onclick="closeMobileNav()" style="padding:10px 12px;border-radius:8px;font-size:0.88rem;color:var(--muted-hi);">FAQ</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FAQ accordion
+    function toggleFaq(btn) {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+    }
+
+    // Mobile nav
+    function openMobileNav() {
+        document.getElementById('mobileOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeMobileNav() {
+        document.getElementById('mobileOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // Active sidebar link on scroll
+    const sections = document.querySelectorAll('.docs-section[id]');
+    const sidebarLinks = document.querySelectorAll('.sidebar-links a');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                sidebarLinks.forEach(a => a.classList.remove('active'));
+                const active = document.querySelector(`.sidebar-links a[href="#${entry.target.id}"]`);
+                if (active) active.classList.add('active');
+            }
+        });
+    }, { threshold: 0.3, rootMargin: '-64px 0px -60% 0px' });
+    sections.forEach(s => observer.observe(s));
+
+    // Open legal docs - redirect to home with hash since legal modal lives there
+    function openLegalFromDocs(type) {
+        window.location.href = '/?legal=' + type;
+    }
+</script>
+
+</body>
+</html>
