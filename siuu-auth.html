@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIUU STUDIO — Sign In</title>
+    <title>SIUU Studio - Sign In</title>
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/png" href="/favicon.png">
@@ -449,7 +449,7 @@
             justify-content: center;
         }
 
-        /* ── Submit button — locked (default) ───────────────────── */
+        /* ── Submit button - locked (default) ───────────────────── */
         .submit-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -457,7 +457,7 @@
             transform: none;
         }
 
-        /* ── Submit button — unlocked after Turnstile ────────────── */
+        /* ── Submit button - unlocked after Turnstile ────────────── */
         .submit-btn.unlocked {
             opacity: 1 !important;
             box-shadow: 0 0 0 3px rgba(249,115,22,0.45), 0 4px 24px rgba(249,115,22,0.5) !important;
@@ -747,7 +747,7 @@
                 <a class="forgot-link" onclick="handleForgotPassword()" tabindex="0"
                    role="button" aria-label="Forgot password">Forgot password?</a>
 
-                <!-- Cloudflare Turnstile — must verify before Sign In unlocks -->
+                <!-- Cloudflare Turnstile - must verify before Sign In unlocks -->
                 <div class="turnstile-wrap">
                     <div class="cf-turnstile"
                          data-sitekey="0x4AAAAAADmYuI3BPiKgkcek"
@@ -863,7 +863,7 @@
                     <span class="field-error" id="signup-confirm-err"></span>
                 </div>
 
-                <!-- Cloudflare Turnstile — must verify before Create Account unlocks -->
+                <!-- Cloudflare Turnstile - must verify before Create Account unlocks -->
                 <div class="turnstile-wrap">
                     <div class="cf-turnstile"
                          data-sitekey="0x4AAAAAADmYuI3BPiKgkcek"
@@ -934,7 +934,7 @@
 
 <script>
 // ════════════════════════════════════════════════════════════════════════════
-//  Cloudflare Turnstile — token state
+//  Cloudflare Turnstile - token state
 //  Replace data-sitekey above with your real site key from:
 //  Cloudflare Dashboard → Turnstile → Add Site
 // ════════════════════════════════════════════════════════════════════════════
@@ -1056,7 +1056,7 @@ let _legalQueue   = [];   // ['tos', 'privacy'] or subset
 let _currentDoc   = null; // 'tos' | 'privacy'
 let _legalSession = null; // Supabase session held while modals are open
 
-// ── Preview mode — open a doc for reading without the acknowledge flow ────────
+// ── Preview mode - open a doc for reading without the acknowledge flow ────────
 function openLegalPreview(docType) {
     const doc = LEGAL_CONTENT[docType];
     if (!doc) return;
@@ -1094,7 +1094,7 @@ function showLegalOverlay(session, queue) {
 
 function _showNextDoc() {
     if (_legalQueue.length === 0) {
-        // All acknowledged — close overlay and redirect
+        // All acknowledged - close overlay and redirect
         document.getElementById('legal-overlay').classList.remove('visible');
         window.location.href = APP_URL;
         return;
@@ -1149,7 +1149,7 @@ async function handleAcknowledge() {
     });
 
     if (error) {
-        // Non-fatal — log and continue anyway
+        // Non-fatal - log and continue anyway
         console.warn('Could not save acknowledgment:', error.message);
     }
 
@@ -1367,7 +1367,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         return;
     }
 
-    // ✅ Signed in — check legal acknowledgment before redirecting
+    // ✅ Signed in - check legal acknowledgment before redirecting
     showFeedback('login-feedback', 'success', 'Signed in! One moment…');
     setTimeout(() => { checkAndShowLegalModals(data.session); }, 600);
 });
@@ -1427,7 +1427,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
 
     // Supabase sends a confirmation email by default.
     // If "Confirm email" is disabled in your Supabase Auth settings the user is
-    // signed in immediately — adjust the message below to match your setting.
+    // signed in immediately - adjust the message below to match your setting.
     showFeedback(
         'signup-feedback', 'success',
         data.user?.identities?.length === 0
@@ -1472,13 +1472,13 @@ async function handleForgotPassword() {
     if (error) {
         showFeedback('login-feedback', 'error', error.message);
     } else {
-        showFeedback('login-feedback', 'success', 'Password reset email sent — check your inbox.');
+        showFeedback('login-feedback', 'success', 'Password reset email sent - check your inbox.');
     }
 }
 
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Auth state listener — auto-redirect if already logged in
+//  Auth state listener - auto-redirect if already logged in
 // ────────────────────────────────────────────────────────────────────────────
 sb.auth.onAuthStateChange((event, session) => {
     if (session && event === 'SIGNED_IN') {
