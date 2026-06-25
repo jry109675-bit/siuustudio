@@ -2189,14 +2189,6 @@
 
 
 
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[SW] Registered, scope:', reg.scope))
-      .catch(err => console.warn('[SW] Registration failed:', err));
-  });
-}
-</script>
+<!-- PWA manifest active; service worker disabled (Cloudflare Pages incompatibility) -->
 </body>
 </html>
