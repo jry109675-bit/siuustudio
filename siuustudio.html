@@ -375,90 +375,49 @@
 
     // Auth guard with session retry - written without arrow functions or
     // destructuring assignment to stay compatible with older Safari JS parsers.
-    function siuuDelay(ms) {
-        return new Promise(function(resolve) { setTimeout(resolve, ms); });
-    }
-
-    // Detect if this page load is an OAuth callback (Supabase puts tokens in the hash).
-    // When it is, we must NOT call getSession() immediately — the tokens haven't been
-    // exchanged yet. Instead we wait for onAuthStateChange to fire SIGNED_IN.
-    function siuuIsOAuthCallback() {
-        var hash = window.location.hash || '';
-        return hash.indexOf('access_token=') !== -1 || hash.indexOf('error=') !== -1;
-    }
-
     function siuuAuthGuard() {
-        if (window.siuuDiag) siuuDiag('STEP', '── siuuAuthGuard() called ──');
-        // ── OAuth callback path ──────────────────────────────────────────────
-        // Supabase is still exchanging the hash tokens; getSession() returns null
-        // at this point, so we wait for the auth state event instead.
-        if (siuuIsOAuthCallback()) {
-            if (window.siuuDiag) siuuDiag('AUTH', 'OAuth callback path — waiting for onAuthStateChange');
-            return new Promise(function(resolve) {
-                var settled = false;
-                var timeout = setTimeout(function() {
-                    if (!settled) {
-                        settled = true;
-                        if (window.siuuDiag) siuuDiag('ERR', 'OAuth callback TIMED OUT after 8s — redirecting to auth');
-                        window.location.replace(AUTH_PAGE);
-                    }
-                }, 8000);
+        if (window.siuuDiag) siuuDiag('STEP', '-- siuuAuthGuard() called --');
 
-                window._sb.auth.onAuthStateChange(function(event, session) {
-                    if (window.siuuDiag) siuuDiag('AUTH', 'onAuthStateChange fired: event=' + event + ' session=' + (session ? 'YES (user=' + (session.user && session.user.email) + ')' : 'NULL'));
-                    if (settled) return;
-                    if (event === 'SIGNED_IN' && session) {
+        // Use onAuthStateChange as the primary mechanism.
+        // It fires INITIAL_SESSION reliably with the session from localStorage,
+        // which is more dependable than getSession() on a fresh page load.
+        return new Promise(function(resolve) {
+            var settled = false;
+
+            var timeout = setTimeout(function() {
+                if (!settled) {
+                    settled = true;
+                    if (window.siuuDiag) siuuDiag('ERR', 'Auth guard TIMED OUT after 10s - REDIRECTING to auth');
+                    window.location.replace(AUTH_PAGE);
+                }
+            }, 10000);
+
+            window._sb.auth.onAuthStateChange(function(event, session) {
+                if (window.siuuDiag) siuuDiag('AUTH', 'onAuthStateChange: event=' + event + ' session=' + (session ? 'YES user=' + (session.user && session.user.email) : 'NULL'));
+                if (settled) return;
+
+                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    if (session) {
                         settled = true;
                         clearTimeout(timeout);
                         window._sbUser = session.user || null;
-                        if (window.siuuDiag) siuuDiag('OK', 'SIGNED_IN confirmed — proceeding to app');
-                        // Clean the hash from the URL so it isn't re-processed
-                        if (window.history && window.history.replaceState) {
-                            window.history.replaceState(null, '', window.location.pathname + window.location.search);
-                        }
+                        if (window.siuuDiag) siuuDiag('OK', 'Session confirmed via ' + event + ' - proceeding to app');
                         resolve();
-                    } else if (event === 'SIGNED_OUT' || (event !== 'INITIAL_SESSION' && !session)) {
+                    } else if (event === 'INITIAL_SESSION') {
                         settled = true;
                         clearTimeout(timeout);
-                        if (window.siuuDiag) siuuDiag('ERR', 'Auth failed: event=' + event + ' — redirecting to auth');
+                        if (window.siuuDiag) siuuDiag('ERR', 'INITIAL_SESSION with no session - REDIRECTING to auth');
                         window.location.replace(AUTH_PAGE);
-                    } else {
-                        if (window.siuuDiag) siuuDiag('INFO', 'Ignoring event: ' + event + ' (waiting for SIGNED_IN)');
                     }
-                });
-            });
-        }
-
-        // ── Normal page load path ────────────────────────────────────────────
-        if (window.siuuDiag) siuuDiag('STEP', 'Normal load path — calling getSession() #1');
-        return window._sb.auth.getSession().then(function(res1) {
-            var session = res1.data.session;
-            if (window.siuuDiag) siuuDiag('INFO', 'getSession #1 result: session=' + (session ? 'YES (user=' + (session.user && session.user.email) + ')' : 'NULL') + (res1.error ? ' error=' + res1.error.message : ''));
-
-            if (session) {
-                window._sbUser = session.user || null;
-                if (window.siuuDiag) siuuDiag('OK', 'Session found on first try — proceeding to app');
-                return;
-            }
-
-            if (window.siuuDiag) siuuDiag('WARN', 'No session yet — waiting 300ms then retrying');
-            return siuuDelay(300).then(function() {
-                if (window.siuuDiag) siuuDiag('STEP', 'Calling getSession() #2 (after 300ms delay)');
-                return window._sb.auth.getSession();
-            }).then(function(res2) {
-                var session2 = res2.data.session;
-                if (window.siuuDiag) siuuDiag('INFO', 'getSession #2 result: session=' + (session2 ? 'YES (user=' + (session2.user && session2.user.email) + ')' : 'NULL') + (res2.error ? ' error=' + res2.error.message : ''));
-                if (session2) {
-                    window._sbUser = session2.user || null;
-                    if (window.siuuDiag) siuuDiag('OK', 'Session found on retry — proceeding to app');
-                } else {
-                    if (window.siuuDiag) siuuDiag('ERR', 'No session after retry — REDIRECTING to ' + AUTH_PAGE);
+                } else if (event === 'SIGNED_OUT') {
+                    settled = true;
+                    clearTimeout(timeout);
+                    if (window.siuuDiag) siuuDiag('ERR', 'SIGNED_OUT event - REDIRECTING to auth');
                     window.location.replace(AUTH_PAGE);
+                } else {
+                    if (window.siuuDiag) siuuDiag('INFO', 'Ignoring event: ' + event);
                 }
             });
-        }).catch(function(e) {
-            if (window.siuuDiag) siuuDiag('ERR', 'getSession threw: ' + e.message + ' — REDIRECTING to ' + AUTH_PAGE);
-            window.location.replace(AUTH_PAGE);
         });
     }
 
