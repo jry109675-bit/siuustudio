@@ -997,7 +997,6 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 //  STEP 2 ─ After login/signup, redirect to your main app
 // ════════════════════════════════════════════════════════════════════════════
 const APP_URL = 'siuustudio.html';
-const AUTH_URL = 'siuu-auth.html';
 
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1464,7 +1463,7 @@ async function handleOAuth(provider) {
         options: {
             // Supabase redirects back here after the OAuth flow completes.
             // Make sure you add this URL to your Supabase "Redirect URLs" list.
-            redirectTo: window.location.origin + '/' + AUTH_URL,
+            redirectTo: window.location.origin + '/' + APP_URL,
         }
     });
     if (error) showFeedback('login-feedback', 'error', error.message);
@@ -1495,18 +1494,10 @@ async function handleForgotPassword() {
 
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Auth state listener - handles all cases:
-//  - Already logged in when landing on auth page (INITIAL_SESSION)
-//  - Fresh email/password sign in (SIGNED_IN)
-//  - OAuth redirect back to this page (TOKEN_REFRESHED)
+//  Auth state listener - auto-redirect if already logged in
 // ────────────────────────────────────────────────────────────────────────────
-let _redirecting = false;
-
 sb.auth.onAuthStateChange((event, session) => {
-    if (_redirecting) return;
-    if (!session) return;
-    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        _redirecting = true;
+    if (session && event === 'SIGNED_IN') {
         checkAndShowLegalModals(session);
     }
 });
