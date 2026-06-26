@@ -1496,8 +1496,11 @@ async function handleForgotPassword() {
 // ────────────────────────────────────────────────────────────────────────────
 //  Auth state listener - auto-redirect if already logged in
 // ────────────────────────────────────────────────────────────────────────────
+let _redirecting = false;
 sb.auth.onAuthStateChange((event, session) => {
-    if (session && event === 'SIGNED_IN') {
+    if (_redirecting) return;
+    if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION' || event === 'USER_UPDATED')) {
+        _redirecting = true;
         checkAndShowLegalModals(session);
     }
 });
