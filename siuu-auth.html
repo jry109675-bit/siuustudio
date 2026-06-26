@@ -1495,23 +1495,17 @@ async function handleForgotPassword() {
 
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Auth state listener - auto-redirect if already logged in
+//  Auth state listener - handles all cases:
+//  - Already logged in when landing on auth page (INITIAL_SESSION)
+//  - Fresh email/password sign in (SIGNED_IN)
+//  - OAuth redirect back to this page (TOKEN_REFRESHED)
 // ────────────────────────────────────────────────────────────────────────────
 let _redirecting = false;
 
-// If user is already logged in when they land on auth page, send them to app
-sb.auth.getSession().then(({ data: { session } }) => {
-    if (session && !_redirecting) {
-        _redirecting = true;
-        checkAndShowLegalModals(session);
-    }
-});
-
-// Handle fresh sign-ins AND OAuth hash processing (TOKEN_REFRESHED fires when
-// Supabase processes the #access_token hash from an OAuth redirect back here)
 sb.auth.onAuthStateChange((event, session) => {
     if (_redirecting) return;
-    if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+    if (!session) return;
+    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         _redirecting = true;
         checkAndShowLegalModals(session);
     }
