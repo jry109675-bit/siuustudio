@@ -168,6 +168,165 @@
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SIUU AUTH DIAGNOSTIC BANNER
+     Captures every detail of the auth flow. Copy button for easy sharing.
+     Remove this entire block once the auth issue is resolved.
+════════════════════════════════════════════════════════════════════════════ -->
+<div id="siuu-diag" style="
+    position:fixed;bottom:0;left:0;right:0;z-index:99999;
+    background:#0d1117;border-top:2px solid #f97316;
+    font-family:'Courier New',monospace;font-size:11px;color:#e2e8f0;
+    max-height:42vh;display:flex;flex-direction:column;
+    box-shadow:0 -4px 24px rgba(249,115,22,0.2);
+">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#161b22;border-bottom:1px solid #21262d;flex-shrink:0;">
+        <span style="color:#f97316;font-weight:bold;font-size:12px;">🔍 SIUU Auth Diagnostic</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <span id="siuu-diag-status" style="font-size:10px;color:#64748b;">initialising…</span>
+            <button onclick="siuuDiagCopy()" style="
+                background:#f97316;color:#000;border:none;border-radius:4px;
+                padding:3px 10px;font-size:10px;font-weight:bold;cursor:pointer;
+                font-family:'Courier New',monospace;
+            ">COPY</button>
+            <button onclick="document.getElementById('siuu-diag').style.display='none'" style="
+                background:#21262d;color:#94a3b8;border:none;border-radius:4px;
+                padding:3px 8px;font-size:10px;cursor:pointer;
+            ">✕</button>
+        </div>
+    </div>
+    <div id="siuu-diag-log" style="overflow-y:auto;padding:8px 12px;flex:1;line-height:1.7;"></div>
+</div>
+
+<script>
+(function() {
+    var _lines = [];
+    var _startTime = Date.now();
+
+    function ts() { return '+' + (Date.now() - _startTime) + 'ms'; }
+
+    function siuuDiagLog(level, msg) {
+        var line = '[' + ts() + '] [' + level + '] ' + msg;
+        _lines.push(line);
+        var el = document.getElementById('siuu-diag-log');
+        if (el) {
+            var colors = { INFO: '#94a3b8', OK: '#22c55e', WARN: '#eab308', ERR: '#ef4444', AUTH: '#f97316', STEP: '#38bdf8' };
+            var div = document.createElement('div');
+            div.style.color = colors[level] || '#e2e8f0';
+            div.style.borderBottom = '1px solid #1e293b';
+            div.style.paddingBottom = '2px';
+            div.textContent = line;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+        var statusEl = document.getElementById('siuu-diag-status');
+        if (statusEl) statusEl.textContent = msg.slice(0, 50);
+    }
+
+    window.siuuDiag = siuuDiagLog;
+
+    window.siuuDiagCopy = function() {
+        var header = [
+            '══════════════════════════════════════',
+            'SIUU Studio — Auth Diagnostic Report',
+            'Generated: ' + new Date().toISOString(),
+            '══════════════════════════════════════',
+            '',
+            '— URL Info —',
+            'href:     ' + window.location.href,
+            'origin:   ' + window.location.origin,
+            'pathname: ' + window.location.pathname,
+            'search:   ' + (window.location.search || '(none)'),
+            'hash:     ' + (window.location.hash ? window.location.hash.slice(0, 80) + (window.location.hash.length > 80 ? '…' : '') : '(none)'),
+            '',
+            '— Browser Info —',
+            'userAgent: ' + navigator.userAgent,
+            'cookieEnabled: ' + navigator.cookieEnabled,
+            'localStorage: ' + (function() { try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return 'OK'; } catch(e) { return 'BLOCKED: ' + e.message; } })(),
+            'sessionStorage: ' + (function() { try { sessionStorage.setItem('_t','1'); sessionStorage.removeItem('_t'); return 'OK'; } catch(e) { return 'BLOCKED: ' + e.message; } })(),
+            '',
+            '— LocalStorage Supabase keys —',
+        ];
+
+        // Dump any supabase-related localStorage keys (redact tokens)
+        var sbKeys = [];
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (k && (k.indexOf('supabase') !== -1 || k.indexOf('sb-') !== -1)) {
+                    var v = localStorage.getItem(k) || '';
+                    try {
+                        var parsed = JSON.parse(v);
+                        // redact tokens
+                        if (parsed && parsed.access_token) parsed.access_token = '[REDACTED]';
+                        if (parsed && parsed.refresh_token) parsed.refresh_token = '[REDACTED]';
+                        sbKeys.push(k + ': ' + JSON.stringify(parsed).slice(0, 300));
+                    } catch(e) {
+                        sbKeys.push(k + ': ' + v.slice(0, 100));
+                    }
+                }
+            }
+        } catch(e) { sbKeys.push('(localStorage read error: ' + e.message + ')'); }
+        if (sbKeys.length === 0) sbKeys.push('(none found)');
+
+        var footer = ['', '— Auth Event Log —'].concat(_lines);
+        var full = header.concat(sbKeys).concat(footer).join('\n');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(full).then(function() {
+                var btn = document.querySelector('#siuu-diag button');
+                if (btn) { btn.textContent = 'COPIED ✓'; setTimeout(function() { btn.textContent = 'COPY'; }, 2000); }
+            }).catch(function() { _fallbackCopy(full); });
+        } else { _fallbackCopy(full); }
+    };
+
+    function _fallbackCopy(text) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+    }
+
+    // ── Capture initial page state ───────────────────────────────────────────
+    siuuDiagLog('STEP', '── Page load started ──');
+    siuuDiagLog('INFO', 'URL: ' + window.location.href.slice(0, 120));
+    siuuDiagLog('INFO', 'Hash present: ' + (window.location.hash ? 'YES → ' + window.location.hash.slice(0, 60) : 'NO'));
+    siuuDiagLog('INFO', 'Search: ' + (window.location.search || '(none)'));
+    siuuDiagLog('INFO', 'Referrer: ' + (document.referrer || '(none)'));
+    siuuDiagLog('INFO', 'UA: ' + navigator.userAgent.slice(0, 80));
+
+    // Check storage
+    try { localStorage.setItem('_siuu_test','1'); localStorage.removeItem('_siuu_test'); siuuDiagLog('OK', 'localStorage: accessible'); }
+    catch(e) { siuuDiagLog('ERR', 'localStorage BLOCKED: ' + e.message); }
+
+    // Check for hash tokens
+    var hash = window.location.hash || '';
+    if (hash.indexOf('access_token=') !== -1) {
+        siuuDiagLog('AUTH', 'OAuth callback detected: access_token in hash');
+    } else if (hash.indexOf('error=') !== -1) {
+        var errMatch = hash.match(/error=([^&]*)/);
+        var errDescMatch = hash.match(/error_description=([^&]*)/);
+        siuuDiagLog('ERR', 'OAuth error in hash: ' + (errMatch ? decodeURIComponent(errMatch[1]) : '?') + ' — ' + (errDescMatch ? decodeURIComponent(errDescMatch[1].replace(/\+/g,' ')) : '?'));
+    } else {
+        siuuDiagLog('INFO', 'No OAuth hash tokens — normal page load');
+        // Check existing localStorage session
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (k && (k.indexOf('supabase') !== -1 || k.indexOf('sb-') !== -1)) {
+                    siuuDiagLog('INFO', 'Found localStorage key: ' + k);
+                }
+            }
+        } catch(e) {}
+    }
+
+    siuuDiagLog('INFO', 'supabase global: ' + (typeof supabase !== 'undefined' ? 'loaded' : 'MISSING'));
+    siuuDiagLog('INFO', 'React global: ' + (typeof React !== 'undefined' ? 'loaded' : 'MISSING'));
+})();
+</script>
+
 <div id="pre-root-loader" style="min-height:100vh;background:#0a0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding-bottom:50vh;">
     <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>
     <div style="width:40px;height:40px;border:3px solid rgba(249,115,22,0.2);border-top:3px solid #f97316;border-radius:50%;animation:_spin 1s linear infinite"></div>
@@ -197,10 +356,16 @@
     console.log('Auth guard: checking if supabase is defined - ' + (typeof supabase));
     if (typeof supabase === 'undefined') {
         console.error('CRITICAL: supabase is undefined - Supabase CDN failed to load');
+        if (window.siuuDiag) siuuDiag('ERR', 'supabase global MISSING — CDN failed to load');
+    } else {
+        if (window.siuuDiag) siuuDiag('OK', 'supabase global present');
     }
     console.log('Auth guard: checking if React is defined - ' + (typeof React));
     if (typeof React === 'undefined') {
         console.error('CRITICAL: React is undefined - React CDN failed to load');
+        if (window.siuuDiag) siuuDiag('ERR', 'React global MISSING — CDN failed to load');
+    } else {
+        if (window.siuuDiag) siuuDiag('OK', 'React global present');
     }
 
     const { createClient } = supabase;
@@ -223,26 +388,30 @@
     }
 
     function siuuAuthGuard() {
+        if (window.siuuDiag) siuuDiag('STEP', '── siuuAuthGuard() called ──');
         // ── OAuth callback path ──────────────────────────────────────────────
         // Supabase is still exchanging the hash tokens; getSession() returns null
         // at this point, so we wait for the auth state event instead.
         if (siuuIsOAuthCallback()) {
+            if (window.siuuDiag) siuuDiag('AUTH', 'OAuth callback path — waiting for onAuthStateChange');
             return new Promise(function(resolve) {
                 var settled = false;
                 var timeout = setTimeout(function() {
                     if (!settled) {
                         settled = true;
-                        // Timed out waiting — send to auth page
+                        if (window.siuuDiag) siuuDiag('ERR', 'OAuth callback TIMED OUT after 8s — redirecting to auth');
                         window.location.replace(AUTH_PAGE);
                     }
                 }, 8000);
 
                 window._sb.auth.onAuthStateChange(function(event, session) {
+                    if (window.siuuDiag) siuuDiag('AUTH', 'onAuthStateChange fired: event=' + event + ' session=' + (session ? 'YES (user=' + (session.user && session.user.email) + ')' : 'NULL'));
                     if (settled) return;
                     if (event === 'SIGNED_IN' && session) {
                         settled = true;
                         clearTimeout(timeout);
                         window._sbUser = session.user || null;
+                        if (window.siuuDiag) siuuDiag('OK', 'SIGNED_IN confirmed — proceeding to app');
                         // Clean the hash from the URL so it isn't re-processed
                         if (window.history && window.history.replaceState) {
                             window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -251,36 +420,49 @@
                     } else if (event === 'SIGNED_OUT' || (event !== 'INITIAL_SESSION' && !session)) {
                         settled = true;
                         clearTimeout(timeout);
+                        if (window.siuuDiag) siuuDiag('ERR', 'Auth failed: event=' + event + ' — redirecting to auth');
                         window.location.replace(AUTH_PAGE);
+                    } else {
+                        if (window.siuuDiag) siuuDiag('INFO', 'Ignoring event: ' + event + ' (waiting for SIGNED_IN)');
                     }
                 });
             });
         }
 
         // ── Normal page load path ────────────────────────────────────────────
+        if (window.siuuDiag) siuuDiag('STEP', 'Normal load path — calling getSession() #1');
         return window._sb.auth.getSession().then(function(res1) {
             var session = res1.data.session;
+            if (window.siuuDiag) siuuDiag('INFO', 'getSession #1 result: session=' + (session ? 'YES (user=' + (session.user && session.user.email) + ')' : 'NULL') + (res1.error ? ' error=' + res1.error.message : ''));
 
             if (session) {
                 window._sbUser = session.user || null;
+                if (window.siuuDiag) siuuDiag('OK', 'Session found on first try — proceeding to app');
                 return;
             }
 
+            if (window.siuuDiag) siuuDiag('WARN', 'No session yet — waiting 300ms then retrying');
             return siuuDelay(300).then(function() {
+                if (window.siuuDiag) siuuDiag('STEP', 'Calling getSession() #2 (after 300ms delay)');
                 return window._sb.auth.getSession();
             }).then(function(res2) {
                 var session2 = res2.data.session;
+                if (window.siuuDiag) siuuDiag('INFO', 'getSession #2 result: session=' + (session2 ? 'YES (user=' + (session2.user && session2.user.email) + ')' : 'NULL') + (res2.error ? ' error=' + res2.error.message : ''));
                 if (session2) {
                     window._sbUser = session2.user || null;
+                    if (window.siuuDiag) siuuDiag('OK', 'Session found on retry — proceeding to app');
                 } else {
+                    if (window.siuuDiag) siuuDiag('ERR', 'No session after retry — REDIRECTING to ' + AUTH_PAGE);
                     window.location.replace(AUTH_PAGE);
                 }
             });
         }).catch(function(e) {
+            if (window.siuuDiag) siuuDiag('ERR', 'getSession threw: ' + e.message + ' — REDIRECTING to ' + AUTH_PAGE);
             window.location.replace(AUTH_PAGE);
         });
     }
 
+    if (window.siuuDiag) siuuDiag('STEP', 'Calling siuuAuthGuard()…');
     siuuAuthGuard();
 
     // Sign-out helper called from the Header button
