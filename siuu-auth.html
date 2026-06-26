@@ -1463,7 +1463,7 @@ async function handleOAuth(provider) {
         options: {
             // Supabase redirects back here after the OAuth flow completes.
             // Make sure you add this URL to your Supabase "Redirect URLs" list.
-            redirectTo: window.location.origin + '/' + APP_URL,
+            redirectTo: window.location.origin + '/siuu-auth.html', // must point HERE not siuustudio — Cloudflare's .html redirect strips the hash, losing OAuth tokens
         }
     });
     if (error) showFeedback('login-feedback', 'error', error.message);
