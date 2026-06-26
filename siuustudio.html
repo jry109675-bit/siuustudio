@@ -214,7 +214,50 @@
         return new Promise(function(resolve) { setTimeout(resolve, ms); });
     }
 
+    // Detect if this page load is an OAuth callback (Supabase puts tokens in the hash).
+    // When it is, we must NOT call getSession() immediately — the tokens haven't been
+    // exchanged yet. Instead we wait for onAuthStateChange to fire SIGNED_IN.
+    function siuuIsOAuthCallback() {
+        var hash = window.location.hash || '';
+        return hash.indexOf('access_token=') !== -1 || hash.indexOf('error=') !== -1;
+    }
+
     function siuuAuthGuard() {
+        // ── OAuth callback path ──────────────────────────────────────────────
+        // Supabase is still exchanging the hash tokens; getSession() returns null
+        // at this point, so we wait for the auth state event instead.
+        if (siuuIsOAuthCallback()) {
+            return new Promise(function(resolve) {
+                var settled = false;
+                var timeout = setTimeout(function() {
+                    if (!settled) {
+                        settled = true;
+                        // Timed out waiting — send to auth page
+                        window.location.replace(AUTH_PAGE);
+                    }
+                }, 8000);
+
+                window._sb.auth.onAuthStateChange(function(event, session) {
+                    if (settled) return;
+                    if (event === 'SIGNED_IN' && session) {
+                        settled = true;
+                        clearTimeout(timeout);
+                        window._sbUser = session.user || null;
+                        // Clean the hash from the URL so it isn't re-processed
+                        if (window.history && window.history.replaceState) {
+                            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                        }
+                        resolve();
+                    } else if (event === 'SIGNED_OUT' || (event !== 'INITIAL_SESSION' && !session)) {
+                        settled = true;
+                        clearTimeout(timeout);
+                        window.location.replace(AUTH_PAGE);
+                    }
+                });
+            });
+        }
+
+        // ── Normal page load path ────────────────────────────────────────────
         return window._sb.auth.getSession().then(function(res1) {
             var session = res1.data.session;
 
