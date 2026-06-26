@@ -208,41 +208,31 @@
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
     console.log('Auth guard: Supabase client ready, running auth guard...');
 
-    // Auth guard - waits for Supabase to confirm the session via onAuthStateChange
-    // before deciding whether to redirect. This prevents the race condition where
-    // getSession() fires before the session is written to localStorage after sign-in.
+    // Auth guard: check session, retry once after 800ms if not found yet
+    // (handles OAuth redirect where token is still being processed)
     function siuuAuthGuard() {
-        var resolved = false;
-
-        // Primary: listen for the first auth state event (fires quickly after load)
-        var unsubscribe = window._sb.auth.onAuthStateChange(function(event, session) {
-            if (resolved) return;
-            resolved = true;
-            if (unsubscribe && unsubscribe.data && unsubscribe.data.subscription) {
-                unsubscribe.data.subscription.unsubscribe();
-            }
+        window._sb.auth.getSession().then(function(res) {
+            var session = res.data.session;
             if (session) {
                 window._sbUser = session.user || null;
-            } else {
-                window.location.replace(AUTH_PAGE);
+                return;
             }
-        });
-
-        // Fallback: if onAuthStateChange hasn't fired within 3s, check session directly
-        setTimeout(function() {
-            if (resolved) return;
-            resolved = true;
-            window._sb.auth.getSession().then(function(res) {
-                var session = res.data.session;
-                if (session) {
-                    window._sbUser = session.user || null;
-                } else {
+            // Session not found - wait and retry once (OAuth may still be processing)
+            setTimeout(function() {
+                window._sb.auth.getSession().then(function(res2) {
+                    var session2 = res2.data.session;
+                    if (session2) {
+                        window._sbUser = session2.user || null;
+                    } else {
+                        window.location.replace(AUTH_PAGE);
+                    }
+                }).catch(function() {
                     window.location.replace(AUTH_PAGE);
-                }
-            }).catch(function() {
-                window.location.replace(AUTH_PAGE);
-            });
-        }, 3000);
+                });
+            }, 800);
+        }).catch(function() {
+            window.location.replace(AUTH_PAGE);
+        });
     }
 
     siuuAuthGuard();
