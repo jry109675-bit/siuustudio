@@ -1531,7 +1531,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
             data: { display_name: name || email.split('@')[0] },
             // emailRedirectTo is where Supabase sends the user after they click the
             // confirmation link in their inbox. Update this to your live domain.
-            emailRedirectTo: window.location.origin + '/' + APP_URL,
+            emailRedirectTo: window.location.origin + '/siuu-auth', // NO .html - see OAuth redirectTo comment
         }
     });
 
@@ -1566,7 +1566,7 @@ async function handleOAuth(provider) {
         options: {
             // Supabase redirects back here after the OAuth flow completes.
             // Make sure you add this URL to your Supabase "Redirect URLs" list.
-            redirectTo: window.location.origin + '/siuu-auth.html', // must point HERE not siuustudio — Cloudflare's .html redirect strips the hash, losing OAuth tokens
+            redirectTo: window.location.origin + '/siuu-auth', // NO .html - Cloudflare strips hash on .html redirects, killing OAuth tokens
         }
     });
     if (error) showFeedback('login-feedback', 'error', error.message);
