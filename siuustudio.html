@@ -208,31 +208,41 @@
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
     console.log('Auth guard: Supabase client ready, running auth guard...');
 
-    // Auth guard: check session, retry once after 800ms if not found yet
-    // (handles OAuth redirect where token is still being processed)
+    // Auth guard: use onAuthStateChange as primary source of truth.
+    // getSession() alone is unreliable immediately after OAuth redirect.
     function siuuAuthGuard() {
-        window._sb.auth.getSession().then(function(res) {
-            var session = res.data.session;
-            if (session) {
-                window._sbUser = session.user || null;
-                return;
-            }
-            // Session not found - wait and retry once (OAuth may still be processing)
-            setTimeout(function() {
-                window._sb.auth.getSession().then(function(res2) {
-                    var session2 = res2.data.session;
-                    if (session2) {
-                        window._sbUser = session2.user || null;
-                    } else {
-                        window.location.replace(AUTH_PAGE);
-                    }
-                }).catch(function() {
-                    window.location.replace(AUTH_PAGE);
-                });
-            }, 800);
-        }).catch(function() {
+        var resolved = false;
+
+        function allow(user) {
+            if (resolved) return;
+            resolved = true;
+            window._sbUser = user || null;
+        }
+
+        function deny() {
+            if (resolved) return;
+            resolved = true;
             window.location.replace(AUTH_PAGE);
+        }
+
+        window._sb.auth.onAuthStateChange(function(event, session) {
+            if (event === 'SIGNED_OUT') return;
+            if (resolved) return;
+            if (session) {
+                allow(session.user);
+            } else if (event === 'INITIAL_SESSION') {
+                // INITIAL_SESSION with no session = definitely not logged in
+                deny();
+            }
         });
+
+        // Hard fallback: if INITIAL_SESSION never fires, check directly
+        setTimeout(function() {
+            if (resolved) return;
+            window._sb.auth.getSession().then(function(res) {
+                res.data.session ? allow(res.data.session.user) : deny();
+            }).catch(deny);
+        }, 5000);
     }
 
     siuuAuthGuard();
