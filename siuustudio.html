@@ -208,41 +208,34 @@
     window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
     console.log('Auth guard: Supabase client ready, running auth guard...');
 
-    // Auth guard: use onAuthStateChange as primary source of truth.
-    // getSession() alone is unreliable immediately after OAuth redirect.
+    // Auth guard with session retry - written without arrow functions or
+    // destructuring assignment to stay compatible with older Safari JS parsers.
+    function siuuDelay(ms) {
+        return new Promise(function(resolve) { setTimeout(resolve, ms); });
+    }
+
     function siuuAuthGuard() {
-        var resolved = false;
+        return window._sb.auth.getSession().then(function(res1) {
+            var session = res1.data.session;
 
-        function allow(user) {
-            if (resolved) return;
-            resolved = true;
-            window._sbUser = user || null;
-        }
-
-        function deny() {
-            if (resolved) return;
-            resolved = true;
-            window.location.replace(AUTH_PAGE);
-        }
-
-        window._sb.auth.onAuthStateChange(function(event, session) {
-            if (event === 'SIGNED_OUT') return;
-            if (resolved) return;
             if (session) {
-                allow(session.user);
-            } else if (event === 'INITIAL_SESSION') {
-                // INITIAL_SESSION with no session = definitely not logged in
-                deny();
+                window._sbUser = session.user || null;
+                return;
             }
-        });
 
-        // Hard fallback: if INITIAL_SESSION never fires, check directly
-        setTimeout(function() {
-            if (resolved) return;
-            window._sb.auth.getSession().then(function(res) {
-                res.data.session ? allow(res.data.session.user) : deny();
-            }).catch(deny);
-        }, 5000);
+            return siuuDelay(300).then(function() {
+                return window._sb.auth.getSession();
+            }).then(function(res2) {
+                var session2 = res2.data.session;
+                if (session2) {
+                    window._sbUser = session2.user || null;
+                } else {
+                    window.location.replace(AUTH_PAGE);
+                }
+            });
+        }).catch(function(e) {
+            window.location.replace(AUTH_PAGE);
+        });
     }
 
     siuuAuthGuard();
