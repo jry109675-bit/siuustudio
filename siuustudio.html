@@ -58,9 +58,11 @@
     <script>
     (function() {
         function patchBabel() {
-            if (!window.Babel || !Babel.transform || Babel._siuuPatched) return;
-            var _orig = Babel.transform.bind(Babel);
-            Babel.transform = function(code, opts) {
+            // Always guard with typeof — referencing an undefined var throws a
+            // cross-origin-masked ReferenceError that shows up as "Script error."
+            if (typeof window.Babel === 'undefined' || !window.Babel.transform || window.Babel._siuuPatched) return;
+            var _orig = window.Babel.transform.bind(window.Babel);
+            window.Babel.transform = function(code, opts) {
                 try {
                     return _orig(code, opts);
                 } catch(e) {
@@ -69,16 +71,25 @@
                     throw e;
                 }
             };
-            Babel._siuuPatched = true;
+            window.Babel._siuuPatched = true;
             console.log('✅ Babel transform patched for error reporting');
+            return true; // signal success to the poller
         }
-        // Poll every 5ms until Babel is available (it loads before DOMContentLoaded fires)
+        // Poll every 50ms (not 5ms) — Babel is a large CDN script; tight polling
+        // wastes cycles and can itself trigger errors before the script settles.
         var tries = 0;
         var poll = setInterval(function() {
-            if (patchBabel() !== undefined || ++tries > 400) clearInterval(poll);
-            if (Babel && Babel._siuuPatched) clearInterval(poll);
-        }, 5);
-        patchBabel();
+            try {
+                var done = patchBabel();
+                if (done || ++tries > 100) clearInterval(poll); // 100 × 50ms = 5s max
+            } catch(e) {
+                // Swallow any unexpected error so the poller never throws uncaught
+                console.warn('Babel patch poll error (non-fatal):', e.message);
+                clearInterval(poll);
+            }
+        }, 50);
+        // Also try immediately in case Babel is already present
+        try { patchBabel(); } catch(e) { /* ignore */ }
     })();
     </script>
 
