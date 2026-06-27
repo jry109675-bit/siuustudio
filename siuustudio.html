@@ -433,9 +433,15 @@
                         [provider.bodyKey]: provider.maxTok, // cerebras → max_completion_tokens, nvidia → max_tokens
                     };
 
+                    const session = await window._sb.auth.getSession();
+                    const accessToken = session?.data?.session?.access_token;
+
                     const response = await fetch(provider.url, {
                         method:  'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type':  'application/json',
+                            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+                        },
                         body:    JSON.stringify(bodyPayload),
                         signal,
                     });
