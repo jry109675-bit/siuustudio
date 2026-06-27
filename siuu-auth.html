@@ -988,14 +988,52 @@ function onSignupExpired() {
 const SUPABASE_URL  = 'https://wxeigysrycbrikoaaaaa.supabase.co';   // ← replace
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZWlneXNyeWNicmlrb2FhYWFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTExNjEsImV4cCI6MjA5MjM4NzE2MX0.GAaEVeMStzClI28RGflZ8m-D15xn903x18jDtW1bci8';                   // ← replace
 
-// Initialise the client (the CDN exposes `supabase` as a global)
+// Initialise the client — storage:false stops Supabase writing to localStorage.
+// The session is handed off to the edge (/api/session) which re-issues it as
+// an HttpOnly cookie that JS can never read directly.
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+        persistSession:    false,   // we persist via HttpOnly cookie at the edge
+        detectSessionInUrl: true,   // still needed for OAuth callback tokens in URL
+        autoRefreshToken:  false,   // siuustudio.html handles refresh via /api/session
+        storage: {
+            // No-op storage — prevents any localStorage writes on this page
+            getItem:    function() { return null; },
+            setItem:    function() {},
+            removeItem: function() {}
+        }
+    }
+});
 
 // ════════════════════════════════════════════════════════════════════════════
-//  STEP 2 ─ After login/signup, redirect to your main app
+//  STEP 2 ─ After login/signup, hand off session to edge then redirect
 // ════════════════════════════════════════════════════════════════════════════
 const APP_URL = 'siuustudio';
+
+// Sends the Supabase session tokens to /api/session which responds with
+// Set-Cookie: sb-session=...; HttpOnly; Secure; SameSite=Lax
+// After that the tokens are gone from JS memory and only live in the cookie.
+async function persistSessionAtEdge(session) {
+    if (!session || !session.access_token) return;
+    try {
+        // Also wipe any old localStorage remnant from before this fix
+        try { localStorage.removeItem('sb-wxeigysrycbrikoaaaaa-auth-token'); } catch(_) {}
+
+        await fetch('/api/session', {
+            method:      'POST',
+            credentials: 'same-origin',
+            headers:     { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                access_token:  session.access_token,
+                refresh_token: session.refresh_token,
+                expires_at:    session.expires_at,
+            }),
+        });
+    } catch (e) {
+        console.warn('[session] Edge handshake failed, continuing anyway:', e.message);
+    }
+}
 
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1109,9 +1147,11 @@ function showLegalOverlay(session, queue) {
 
 function _showNextDoc() {
     if (_legalQueue.length === 0) {
-        // All acknowledged - close overlay and redirect
+        // All acknowledged - persist session at edge then redirect
         document.getElementById('legal-overlay').classList.remove('visible');
-        window.location.href = APP_URL;
+        persistSessionAtEdge(_legalSession).then(function() {
+            window.location.href = APP_URL;
+        });
         return;
     }
 
@@ -1185,7 +1225,9 @@ async function checkAndShowLegalModals(session) {
     if (queue.length > 0) {
         showLegalOverlay(session, queue);
     } else {
-        window.location.href = APP_URL;
+        persistSessionAtEdge(session).then(function() {
+            window.location.href = APP_URL;
+        });
     }
 }
 
