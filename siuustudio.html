@@ -200,53 +200,113 @@
 
 
     const { createClient } = supabase;
-    window._sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // ── Full HttpOnly session bootstrap ──────────────────────────────────────
+    // The session lives in an HttpOnly cookie set by /api/session (edge function).
+    // JS cannot read HttpOnly cookies via document.cookie at all — that's the point.
+    // Instead we fetch /api/session once on page load; the edge reads the cookie
+    // server-side and returns the access_token so we can initialise the Supabase
+    // client. After that, the raw tokens never touch JS memory or any JS-readable
+    // storage.
+    //
+    // No-op storage adapter: prevents Supabase from writing anything to localStorage.
+    var _noopStorage = {
+        getItem:    function() { return null; },
+        setItem:    function() {},
+        removeItem: function() {}
+    };
+
+    // Wipe any pre-existing localStorage session from before this security upgrade
+    (function() {
+        try { localStorage.removeItem('sb-wxeigysrycbrikoaaaaa-auth-token'); } catch(_) {}
+    })();
+
+    window._sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+        auth: {
+            storage:           _noopStorage,
+            persistSession:    false,  // edge cookie handles persistence
+            detectSessionInUrl: false, // auth page handles OAuth callback
+            autoRefreshToken:  false   // we manually refresh via /api/session
+        }
+    });
+
+    // Bootstrap: fetch session from edge and set it on the Supabase client.
+    // Returns a Promise that resolves when the client is session-aware.
+    window._sessionBootstrap = fetch('/api/session', {
+        method:      'GET',
+        credentials: 'same-origin',
+    }).then(function(res) {
+        return res.json();
+    }).then(function(data) {
+        if (data && data.session && data.session.access_token) {
+            return window._sb.auth.setSession({
+                access_token:  data.session.access_token,
+                refresh_token: data.session.refresh_token || '',
+            });
+        }
+        return { data: { session: null } };
+    }).catch(function(e) {
+        console.warn('[session] Bootstrap fetch failed:', e.message);
+        return { data: { session: null } };
+    });
+
+    // Sign-out helper — calls edge to clear the HttpOnly cookie, then Supabase
+    function siuuSignOut() {
+        return fetch('/api/session', {
+            method:      'DELETE',
+            credentials: 'same-origin',
+        }).then(function() {
+            return window._sb.auth.signOut();
+        });
+    }
 
     // Auth guard with session retry - written without arrow functions or
     // destructuring assignment to stay compatible with older Safari JS parsers.
     function siuuAuthGuard() {
 
-        // Use onAuthStateChange as the primary mechanism.
-        // It fires INITIAL_SESSION reliably with the session from localStorage,
-        // which is more dependable than getSession() on a fresh page load.
-        return new Promise(function(resolve) {
-            var settled = false;
+        // Wait for the edge session bootstrap to complete before checking auth.
+        // _sessionBootstrap is a Promise set above that fetches /api/session and
+        // calls _sb.auth.setSession() — only after that will onAuthStateChange
+        // fire INITIAL_SESSION with an actual session object.
+        return window._sessionBootstrap.then(function() {
+            return new Promise(function(resolve) {
+                var settled = false;
 
-            var timeout = setTimeout(function() {
-                if (!settled) {
-                    settled = true;
-                    window.location.replace(AUTH_PAGE);
-                }
-            }, 10000);
-
-            window._sb.auth.onAuthStateChange(function(event, session) {
-                if (settled) return;
-
-                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                    if (session) {
+                var timeout = setTimeout(function() {
+                    if (!settled) {
                         settled = true;
-                        clearTimeout(timeout);
-                        window._sbUser = session.user || null;
-                        resolve();
-                    } else if (event === 'INITIAL_SESSION') {
+                        window.location.replace(AUTH_PAGE);
+                    }
+                }, 10000);
+
+                window._sb.auth.onAuthStateChange(function(event, session) {
+                    if (settled) return;
+
+                    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                        if (session) {
+                            settled = true;
+                            clearTimeout(timeout);
+                            window._sbUser = session.user || null;
+                            resolve();
+                        } else if (event === 'INITIAL_SESSION') {
+                            settled = true;
+                            clearTimeout(timeout);
+                            window.location.replace(AUTH_PAGE);
+                        }
+                    } else if (event === 'SIGNED_OUT') {
                         settled = true;
                         clearTimeout(timeout);
                         window.location.replace(AUTH_PAGE);
                     }
-                } else if (event === 'SIGNED_OUT') {
-                    settled = true;
-                    clearTimeout(timeout);
-                    window.location.replace(AUTH_PAGE);
-                } else {
-                }
+                });
             });
         });
     }
     siuuAuthGuard();
 
-    // Sign-out helper called from the Header button
+    // Sign-out: clear HttpOnly cookie at edge AND sign out from Supabase client
     window.siuuSignOut = function() {
-        return window._sb.auth.signOut().then(function() {
+        return siuuSignOut().then(function() {
             window.location.replace(AUTH_PAGE);
         });
     };
