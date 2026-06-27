@@ -996,6 +996,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [userRole, setUserRole] = useState('user');       // 'user' | 'moderator' | 'admin'
         const [banInfo, setBanInfo] = useState(null);            // { tier, reason, custom_message, expires_at, appealable } | null
         const [banCheckDone, setBanCheckDone] = useState(false); // gate rendering until first ban-check completes
+        const [warnInfo, setWarnInfo] = useState(null);          // { id, message, created_at } | null - pending warning the user must acknowledge
         const [varRoomOpen, setVarRoomOpen] = useState(false);
         const [reportUserOpen, setReportUserOpen] = useState(false);
         const abortRef = useRef(null);
@@ -1031,6 +1032,22 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                         setLegalAckQueue(rest);
                         setLegalPendingAck(true);
                         setLegalModal(first);
+                    }
+
+                    // Check for any pending (unseen) warnings for this user
+                    try {
+                        const { data: warnings } = await window._sb
+                            .from('user_warnings')
+                            .select('id, message, created_at')
+                            .eq('user_id', user.id)
+                            .eq('seen', false)
+                            .order('created_at', { ascending: true })
+                            .limit(1);
+                        if (warnings && warnings.length > 0) {
+                            setWarnInfo(warnings[0]);
+                        }
+                    } catch (e) {
+                        console.warn('Could not check warnings:', e);
                     }
                 } catch (e) {
                     console.warn('Could not fetch user for legal check:', e);
@@ -1291,6 +1308,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 currentUser,
                 userRole, setUserRole,
                 banInfo, setBanInfo, banCheckDone,
+                warnInfo, setWarnInfo,
                 varRoomOpen, setVarRoomOpen,
                 reportUserOpen, setReportUserOpen,
                 legalModal, setLegalModal,
@@ -1483,6 +1501,60 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
     const RoleBadge = ({ role }) => {
         const b = ROLE_BADGES[role] || ROLE_BADGES.user;
         return <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${b.className}`}>{b.label}</span>;
+    };
+
+    // ─── Warn Screen (one-time takeover until user acknowledges the warning) ────
+    const WarnScreen = () => {
+        const { warnInfo, setWarnInfo } = useStore();
+        const [acknowledging, setAcknowledging] = useState(false);
+        const [agreed, setAgreed] = useState(false);
+
+        if (!warnInfo) return null;
+
+        const acknowledge = async () => {
+            if (!agreed) return;
+            setAcknowledging(true);
+            try {
+                // Mark the warning as seen in the DB
+                await window._sb
+                    .from('user_warnings')
+                    .update({ seen: true, seen_at: new Date().toISOString() })
+                    .eq('id', warnInfo.id);
+            } catch (e) {
+                console.warn('Could not mark warning as seen:', e);
+            } finally {
+                setWarnInfo(null);
+            }
+        };
+
+        return (
+            <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+                <div style={{ maxWidth: '480px', width: '100%' }}>
+                    <div className="glass rounded-2xl p-8 border border-yellow-500/30 text-center">
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+                        <h1 className="text-2xl font-display font-bold text-white mb-2">You've received a warning</h1>
+                        <p className="text-slate-400 text-sm mb-6">A staff member has issued a formal warning on your account. Please read it carefully. Continued violations may result in a ban.</p>
+
+                        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-5 py-4 mb-6 text-left">
+                            <p className="text-xs text-yellow-400/70 uppercase tracking-wider font-bold mb-2">Warning message</p>
+                            <p className="text-slate-200 text-sm leading-relaxed">{warnInfo.message}</p>
+                            <p className="text-slate-500 text-xs mt-3">{new Date(warnInfo.created_at).toLocaleString()}</p>
+                        </div>
+
+                        <label className="flex items-start gap-3 mb-6 cursor-pointer text-left">
+                            <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+                                style={{ marginTop: '2px', accentColor: '#f97316', width: '15px', height: '15px', flexShrink: 0 }} />
+                            <span className="text-slate-400 text-sm">I have read and understood this warning, and I agree to follow the community guidelines going forward.</span>
+                        </label>
+
+                        <button onClick={acknowledge} disabled={!agreed || acknowledging}
+                            className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white font-semibold font-display">
+                            {acknowledging ? 'Saving…' : 'Acknowledge & Continue'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     // ─── Ban Screen (full-app takeover when banned) ─────────────────────────────
@@ -1721,6 +1793,52 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         );
     };
 
+    // ─── Warn Action Panel - inline in VAR Room ──────────────────────────────────
+    const WarnActionPanel = ({ target, onClose, onDone }) => {
+        const { toast } = useToast();
+        const [message, setMessage] = useState('');
+        const [submitting, setSubmitting] = useState(false);
+
+        const confirm = async () => {
+            if (!message.trim()) { toast('Enter a warning message', 'warning'); return; }
+            setSubmitting(true);
+            try {
+                const { error } = await window._sb.rpc('issue_warning', {
+                    p_target_user_id: target.id,
+                    p_message: message.trim(),
+                });
+                if (error) throw error;
+                toast(`Warning issued to ${target.email}`, 'success');
+                onDone?.();
+            } catch (e) {
+                toast('Warning failed: ' + e.message, 'error');
+            } finally {
+                setSubmitting(false);
+            }
+        };
+
+        return (
+            <div className="bg-slate-900/80 border border-yellow-500/20 rounded-xl p-4 mt-2 space-y-3">
+                <p className="text-sm text-white font-semibold">⚠️ Warn {target.email}</p>
+                <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Warning message (shown to user)</label>
+                    <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
+                        placeholder="e.g. Please refrain from posting spam links. Further violations will result in a ban."
+                        className="w-full bg-slate-800/60 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none resize-none" />
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={confirm} disabled={submitting || !message.trim()}
+                        className="flex-1 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 transition-colors text-black font-semibold text-sm">
+                        {submitting ? 'Issuing...' : 'Issue Warning'}
+                    </button>
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-slate-300 text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     // ─── Ban Action Panel - shared by VAR Room Lite (mod) and Full (admin) ──────
     const BanActionPanel = ({ target, allowedTiers, onClose, onDone }) => {
         const { toast } = useToast();
@@ -1799,6 +1917,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const [auditLog, setAuditLog] = useState([]);
         const [loading, setLoading] = useState(false);
         const [banTarget, setBanTarget] = useState(null); // { id, email } | null
+        const [warnTarget, setWarnTarget] = useState(null); // { id, email } | null
 
         // Re-verify role server-side every time the modal opens. This is the
         // real gate - even if a client somehow forces varRoomOpen=true, this
@@ -1875,13 +1994,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         const allowedBanTiers = isAdmin ? ADMIN_BAN_TIERS : MOD_BAN_TIERS;
 
         const warnUser = async (targetId, email) => {
-            const message = window.prompt(`Warning message for ${email}:`);
-            if (!message) return;
-            try {
-                const { error } = await window._sb.rpc('issue_warning', { p_target_user_id: targetId, p_message: message });
-                if (error) throw error;
-                toast('Warning issued', 'success');
-            } catch (e) { toast('Failed: ' + e.message, 'error'); }
+            setWarnTarget(prev => prev?.id === targetId ? null : { id: targetId, email });
         };
 
         const dismissReport = async (reportId) => {
@@ -1970,11 +2083,23 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                                             <p className="text-xs text-slate-500 italic mt-3">Staff account - {verifiedRole === 'moderator' ? 'escalate to Admin.' : 'cannot act on the admin account.'}</p>
                                         ) : r.status === 'open' && r.reported_user_id ? (
                                             <div className="flex flex-wrap gap-2 mt-3">
-                                                <button onClick={() => warnUser(r.reported_user_id, r.reported_email)} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors">⚠️ Warn</button>
-                                                <button onClick={() => setBanTarget({ id: r.reported_user_id, email: r.reported_email, reportId: r.id })} className="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-xs text-red-400 transition-colors">🔨 Ban</button>
+                                                <button onClick={() => { setWarnTarget(prev => prev?.id === r.reported_user_id && prev?.reportId === r.id ? null : { id: r.reported_user_id, email: r.reported_email, reportId: r.id }); setBanTarget(null); }} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors">⚠️ Warn</button>
+                                                <button onClick={() => { setBanTarget({ id: r.reported_user_id, email: r.reported_email, reportId: r.id }); setWarnTarget(null); }} className="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-xs text-red-400 transition-colors">🔨 Ban</button>
                                                 <button onClick={() => dismissReport(r.id)} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-400 transition-colors">Dismiss</button>
                                             </div>
                                         ) : null}
+
+                                        {warnTarget?.reportId === r.id && (
+                                            <WarnActionPanel
+                                                target={warnTarget}
+                                                onClose={() => setWarnTarget(null)}
+                                                onDone={async () => {
+                                                    setWarnTarget(null);
+                                                    await window._sb.rpc('review_report', { p_report_id: r.id, p_status: 'actioned' });
+                                                    loadTab('reports');
+                                                }}
+                                            />
+                                        )}
 
                                         {banTarget?.reportId === r.id && (
                                             <BanActionPanel
@@ -2029,10 +2154,20 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                                         {u.role !== 'admin' && (
                                             u.is_banned
                                                 ? <button onClick={() => unbanUser(u.id, u.email)} className="px-3 py-1.5 rounded-lg bg-green-500/15 hover:bg-green-500/25 text-xs text-green-400 transition-colors">✓ Unban</button>
-                                                : <button onClick={() => setBanTarget(prev => prev?.id === u.id ? null : { id: u.id, email: u.email })} className="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-xs text-red-400 transition-colors">🔨 Ban</button>
+                                                : <>
+                                                    <button onClick={() => { setWarnTarget(prev => prev?.id === u.id && !prev?.reportId ? null : { id: u.id, email: u.email }); setBanTarget(null); }} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors">⚠️ Warn</button>
+                                                    <button onClick={() => { setBanTarget(prev => prev?.id === u.id ? null : { id: u.id, email: u.email }); setWarnTarget(null); }} className="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-xs text-red-400 transition-colors">🔨 Ban</button>
+                                                </>
                                         )}
                                         {u.role === 'admin' && <span className="text-xs text-slate-500 italic px-1 py-1.5">Cannot be moderated</span>}
                                     </div>
+                                    {warnTarget?.id === u.id && !warnTarget?.reportId && (
+                                        <WarnActionPanel
+                                            target={warnTarget}
+                                            onClose={() => setWarnTarget(null)}
+                                            onDone={() => { setWarnTarget(null); loadTab('users'); }}
+                                        />
+                                    )}
                                     {banTarget?.id === u.id && !banTarget?.reportId && (
                                         <BanActionPanel
                                             target={banTarget}
@@ -3982,7 +4117,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
 
     const App = () => {
         console.log('[App] rendering...');
-        const { banInfo, banCheckDone } = useStore();
+        const { banInfo, banCheckDone, warnInfo } = useStore();
 
         // Full-app takeover while a ban check is pending or active - blocks
         // access to everything else, including the VAR Room / RPCs.
@@ -3993,6 +4128,7 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             </div>
         );
         if (banInfo) return (<><BanScreen /><LegalModal /></>);
+        if (warnInfo) return (<><WarnScreen /><LegalModal /></>);
 
         return (
             <div className="min-h-screen bg-[var(--bg)] flex">
