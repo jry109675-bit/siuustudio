@@ -260,49 +260,60 @@
         });
     }
 
-    // Auth guard with session retry - written without arrow functions or
-    // destructuring assignment to stay compatible with older Safari JS parsers.
+    // Auth guard - register listener FIRST, then trigger bootstrap so we never
+    // miss the SIGNED_IN event that setSession() fires.
     function siuuAuthGuard() {
+        return new Promise(function(resolve) {
+            var settled = false;
 
-        // Wait for the edge session bootstrap to complete before checking auth.
-        // _sessionBootstrap is a Promise set above that fetches /api/session and
-        // calls _sb.auth.setSession() — only after that will onAuthStateChange
-        // fire INITIAL_SESSION with an actual session object.
-        return window._sessionBootstrap.then(function() {
-            return new Promise(function(resolve) {
-                var settled = false;
+            var timeout = setTimeout(function() {
+                if (!settled) {
+                    settled = true;
+                    window.location.replace(AUTH_PAGE);
+                }
+            }, 10000);
 
-                var timeout = setTimeout(function() {
-                    if (!settled) {
-                        settled = true;
-                        window.location.replace(AUTH_PAGE);
-                    }
-                }, 10000);
+            // Listener must be attached before _sessionBootstrap calls setSession()
+            window._sb.auth.onAuthStateChange(function(event, session) {
+                if (settled) return;
 
-                window._sb.auth.onAuthStateChange(function(event, session) {
-                    if (settled) return;
-
-                    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                        if (session) {
-                            settled = true;
-                            clearTimeout(timeout);
-                            window._sbUser = session.user || null;
-                            resolve();
-                        } else if (event === 'INITIAL_SESSION') {
-                            settled = true;
-                            clearTimeout(timeout);
-                            window.location.replace(AUTH_PAGE);
-                        }
-                    } else if (event === 'SIGNED_OUT') {
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    if (session) {
                         settled = true;
                         clearTimeout(timeout);
-                        window.location.replace(AUTH_PAGE);
+                        window._sbUser = session.user || null;
+                        resolve();
                     }
-                });
+                } else if (event === 'INITIAL_SESSION') {
+                    // Fires if setSession() hasn't been called yet (no cookie)
+                    if (session) {
+                        settled = true;
+                        clearTimeout(timeout);
+                        window._sbUser = session.user || null;
+                        resolve();
+                    } else {
+                        // Bootstrap still in flight — wait for it before giving up
+                        window._sessionBootstrap.then(function() {
+                            if (!settled) {
+                                settled = true;
+                                clearTimeout(timeout);
+                                window.location.replace(AUTH_PAGE);
+                            }
+                        });
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    settled = true;
+                    clearTimeout(timeout);
+                    window.location.replace(AUTH_PAGE);
+                }
             });
+
+            // Now trigger the bootstrap — setSession() will fire SIGNED_IN above
+            window._sessionBootstrap;
         });
     }
     siuuAuthGuard();
+
 
     // Sign-out: clear HttpOnly cookie at edge AND sign out from Supabase client
     window.siuuSignOut = function() {
