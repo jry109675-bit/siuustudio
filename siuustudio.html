@@ -178,7 +178,74 @@
     <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>
     <div style="width:40px;height:40px;border:3px solid rgba(249,115,22,0.2);border-top:3px solid #f97316;border-radius:50%;animation:_spin 1s linear infinite"></div>
     <p style="color:#64748b;font-size:14px;font-family:'DM Sans',sans-serif;margin:0">Loading SIUU Studio…</p>
+    <!-- ── Diagnostic banner (shown after 8s if app never boots) ──────── -->
+    <div id="diag-banner" style="display:none;margin-top:24px;max-width:520px;width:90%;background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);border-radius:12px;padding:20px;font-family:'DM Sans',sans-serif;">
+        <p style="color:#f87171;font-size:13px;font-weight:600;margin:0 0 12px">⚠️ App failed to initialise — diagnostics</p>
+        <div id="diag-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#94a3b8;"></div>
+        <p style="color:#475569;font-size:11px;margin:14px 0 0">Check the browser console (F12 → Console) for full error details.</p>
+        <button onclick="window.location.reload()" style="margin-top:14px;padding:8px 18px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">Retry</button>
+    </div>
 </div>
+
+<script>
+// ── Loading watchdog: if the app hasn't booted in 8 s, surface diagnostics ──
+(function() {
+    var _diagChecks = [];
+    function _addCheck(label, ok, detail) {
+        _diagChecks.push({ label: label, ok: ok, detail: detail || '' });
+    }
+
+    setTimeout(function() {
+        // Only show if the loader is still visible (React never removed it)
+        var loader = document.getElementById('pre-root-loader');
+        if (!loader || loader.style.display === 'none') return;
+
+        // Run diagnostics
+        _addCheck('React', typeof React !== 'undefined', typeof React !== 'undefined' ? 'v' + (React.version || '?') : 'CDN script failed to load');
+        _addCheck('ReactDOM', typeof ReactDOM !== 'undefined', typeof ReactDOM !== 'undefined' ? 'ok' : 'CDN script failed to load');
+        _addCheck('Babel', typeof Babel !== 'undefined', typeof Babel !== 'undefined' ? 'ok' : 'CDN script failed to load');
+        _addCheck('Supabase', typeof supabase !== 'undefined', typeof supabase !== 'undefined' ? 'ok' : 'CDN script failed to load');
+        _addCheck('window._sb client', !!window._sb, window._sb ? 'createClient succeeded' : 'createClient was never called — Supabase CDN may have failed');
+
+        // Sniff placeholder Supabase URL
+        var sbUrl = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : '';
+        var urlPlaceholder = sbUrl && sbUrl.indexOf('aaaaa') !== -1;
+        _addCheck('Supabase URL', !urlPlaceholder, urlPlaceholder ? 'URL looks like a placeholder (' + sbUrl + ') — replace with your real project URL' : sbUrl || 'unknown');
+
+        // Check if /api/ban-check is reachable (async, best-effort)
+        var banCheckReachable = null;
+        try {
+            fetch('/api/ban-check', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } })
+                .then(function(r) {
+                    var item = document.querySelector('[data-diag="ban-check"]');
+                    if (item) item.textContent = (r.ok ? '✅' : '⚠️') + ' /api/ban-check → HTTP ' + r.status + (r.ok ? '' : ' (Cloudflare function unavailable — works only when deployed)');
+                })
+                .catch(function(e) {
+                    var item = document.querySelector('[data-diag="ban-check"]');
+                    if (item) item.textContent = '❌ /api/ban-check unreachable: ' + e.message + ' (expected when running locally)';
+                });
+        } catch(e) {}
+
+        // Render banner
+        var list = document.getElementById('diag-list');
+        _diagChecks.forEach(function(c) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;';
+            row.innerHTML = (c.ok ? '<span style="color:#4ade80;flex-shrink:0">✅</span>' : '<span style="color:#f87171;flex-shrink:0">❌</span>') +
+                '<span><strong style="color:#cbd5e1">' + c.label + '</strong>' + (c.detail ? ' — ' + c.detail : '') + '</span>';
+            list.appendChild(row);
+        });
+        // Async ban-check row
+        var banRow = document.createElement('div');
+        banRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;';
+        banRow.setAttribute('data-diag', 'ban-check');
+        banRow.textContent = '⏳ /api/ban-check — checking…';
+        list.appendChild(banRow);
+
+        document.getElementById('diag-banner').style.display = 'block';
+    }, 8000);
+})();
+</script>
 
 
 
@@ -1080,8 +1147,18 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 const loader = document.getElementById('pre-root-loader');
                 if (loader) loader.remove();
             };
+            // Safety net: if window._sb is missing (Supabase CDN failed or
+            // createClient threw), unlock immediately rather than hanging forever.
+            if (!window._sb) {
+                console.error('[ban-check] window._sb is undefined — Supabase client was never created. Unlocking immediately.');
+                unlock();
+                return;
+            }
             (async () => {
                 console.log('[ban-check] starting');
+                // IMPORTANT: create the overall timeout FIRST, before any awaits.
+                // Previously the timeout was created after getSession(), meaning it never
+                // raced against getSession() itself — if getSession() hung, the app froze forever.
                 const timeout = new Promise(resolve => setTimeout(() => resolve({ timedOut: true }), 6000));
                 try {
                     console.log('[ban-check] getting fingerprint...');
@@ -1089,7 +1166,12 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                     console.log('[ban-check] fingerprint:', fingerprint ? 'ok' : 'null');
 
                     console.log('[ban-check] getting session...');
-                    const { data: { session }, error: sessErr } = await window._sb.auth.getSession();
+                    // Wrap getSession() in the overall timeout so a hung auth call can't block forever.
+                    const sessionResult = await Promise.race([
+                        window._sb.auth.getSession(),
+                        timeout.then(() => ({ data: { session: null }, error: new Error('timeout') }))
+                    ]);
+                    const { data: { session }, error: sessErr } = sessionResult;
                     console.log('[ban-check] session:', session ? 'found' : 'null', sessErr ? 'err:' + sessErr.message : '');
 
                     console.log('[ban-check] fetching /api/ban-check...');
