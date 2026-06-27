@@ -1034,17 +1034,21 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                         setLegalModal(first);
                     }
 
-                    // Check for any pending (unseen) warnings for this user
+                    // Check for any unacknowledged warnings for this user.
+                    // Since the warnings table has no seen column, we track
+                    // acknowledged warning IDs in the user's own auth metadata.
                     try {
                         const { data: warnings } = await window._sb
-                            .from('user_warnings')
+                            .from('warnings')
                             .select('id, message, created_at')
                             .eq('user_id', user.id)
-                            .eq('seen', false)
-                            .order('created_at', { ascending: true })
+                            .order('created_at', { ascending: false })
                             .limit(1);
                         if (warnings && warnings.length > 0) {
-                            setWarnInfo(warnings[0]);
+                            const acked = meta.acknowledged_warnings ?? [];
+                            if (!acked.includes(warnings[0].id)) {
+                                setWarnInfo(warnings[0]);
+                            }
                         }
                     } catch (e) {
                         console.warn('Could not check warnings:', e);
@@ -1515,13 +1519,16 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
             if (!agreed) return;
             setAcknowledging(true);
             try {
-                // Mark the warning as seen in the DB
-                await window._sb
-                    .from('user_warnings')
-                    .update({ seen: true, seen_at: new Date().toISOString() })
-                    .eq('id', warnInfo.id);
+                // No seen column on warnings table — track acknowledged IDs in user metadata instead
+                const { data: { user } } = await window._sb.auth.getUser();
+                const existing = user?.user_metadata?.acknowledged_warnings ?? [];
+                if (!existing.includes(warnInfo.id)) {
+                    await window._sb.auth.updateUser({
+                        data: { acknowledged_warnings: [...existing, warnInfo.id] }
+                    });
+                }
             } catch (e) {
-                console.warn('Could not mark warning as seen:', e);
+                console.warn('Could not mark warning as acknowledged:', e);
             } finally {
                 setWarnInfo(null);
             }
