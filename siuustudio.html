@@ -178,72 +178,177 @@
     <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>
     <div style="width:40px;height:40px;border:3px solid rgba(249,115,22,0.2);border-top:3px solid #f97316;border-radius:50%;animation:_spin 1s linear infinite"></div>
     <p style="color:#64748b;font-size:14px;font-family:'DM Sans',sans-serif;margin:0">Loading SIUU Studio…</p>
-    <!-- ── Diagnostic banner (shown after 8s if app never boots) ──────── -->
-    <div id="diag-banner" style="display:none;margin-top:24px;max-width:520px;width:90%;background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);border-radius:12px;padding:20px;font-family:'DM Sans',sans-serif;">
-        <p style="color:#f87171;font-size:13px;font-weight:600;margin:0 0 12px">⚠️ App failed to initialise — diagnostics</p>
-        <div id="diag-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#94a3b8;"></div>
-        <p style="color:#475569;font-size:11px;margin:14px 0 0">Check the browser console (F12 → Console) for full error details.</p>
-        <button onclick="window.location.reload()" style="margin-top:14px;padding:8px 18px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">Retry</button>
-    </div>
 </div>
 
 <script>
-// ── Loading watchdog: if the app hasn't booted in 8 s, surface diagnostics ──
+// ── SIUU DIAGNOSTIC BANNER — intercepts ALL console output from page load ──
 (function() {
-    var _diagChecks = [];
-    function _addCheck(label, ok, detail) {
-        _diagChecks.push({ label: label, ok: ok, detail: detail || '' });
+    var _logs = [];
+    var _el = null;
+    var _logEl = null;
+
+    function _ts() {
+        var n = performance.now();
+        return '+' + (n / 1000).toFixed(2) + 's';
     }
 
-    setTimeout(function() {
-        // Only show if the loader is still visible (React never removed it)
-        var loader = document.getElementById('pre-root-loader');
-        if (!loader || loader.style.display === 'none') return;
+    function _pushLog(level, args) {
+        var msg = Array.prototype.slice.call(args).map(function(a) {
+            if (a === null) return 'null';
+            if (a === undefined) return 'undefined';
+            if (typeof a === 'object') { try { return JSON.stringify(a); } catch(e) { return String(a); } }
+            return String(a);
+        }).join(' ');
+        var entry = { t: _ts(), level: level, msg: msg };
+        _logs.push(entry);
+        if (_logEl) _renderEntry(entry);
+    }
 
-        // Run diagnostics
-        _addCheck('React', typeof React !== 'undefined', typeof React !== 'undefined' ? 'v' + (React.version || '?') : 'CDN script failed to load');
-        _addCheck('ReactDOM', typeof ReactDOM !== 'undefined', typeof ReactDOM !== 'undefined' ? 'ok' : 'CDN script failed to load');
-        _addCheck('Babel', typeof Babel !== 'undefined', typeof Babel !== 'undefined' ? 'ok' : 'CDN script failed to load');
-        _addCheck('Supabase', typeof supabase !== 'undefined', typeof supabase !== 'undefined' ? 'ok' : 'CDN script failed to load');
-        _addCheck('window._sb client', !!window._sb, window._sb ? 'createClient succeeded' : 'createClient was never called — Supabase CDN may have failed');
+    function _color(level) {
+        if (level === 'error') return '#f87171';
+        if (level === 'warn')  return '#fbbf24';
+        return '#94a3b8';
+    }
 
-        // Sniff placeholder Supabase URL
-        var sbUrl = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : '';
-        var urlPlaceholder = sbUrl && sbUrl.indexOf('aaaaa') !== -1;
-        _addCheck('Supabase URL', !urlPlaceholder, urlPlaceholder ? 'URL looks like a placeholder (' + sbUrl + ') — replace with your real project URL' : sbUrl || 'unknown');
+    function _renderEntry(entry) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,0.04);padding:3px 0;';
+        var ts = document.createElement('span');
+        ts.style.cssText = 'color:#475569;flex-shrink:0;font-size:10px;padding-top:1px;min-width:52px;';
+        ts.textContent = entry.t;
+        var lv = document.createElement('span');
+        lv.style.cssText = 'flex-shrink:0;font-size:10px;padding-top:1px;min-width:36px;color:' + _color(entry.level) + ';text-transform:uppercase;';
+        lv.textContent = entry.level;
+        var msg = document.createElement('span');
+        msg.style.cssText = 'color:' + _color(entry.level) + ';font-size:11px;word-break:break-all;white-space:pre-wrap;';
+        msg.textContent = entry.msg;
+        row.appendChild(ts);
+        row.appendChild(lv);
+        row.appendChild(msg);
+        _logEl.appendChild(row);
+        _logEl.scrollTop = _logEl.scrollHeight;
+    }
 
-        // Check if /api/ban-check is reachable (async, best-effort)
-        var banCheckReachable = null;
-        try {
-            fetch('/api/ban-check', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } })
-                .then(function(r) {
-                    var item = document.querySelector('[data-diag="ban-check"]');
-                    if (item) item.textContent = (r.ok ? '✅' : '⚠️') + ' /api/ban-check → HTTP ' + r.status + (r.ok ? '' : ' (Cloudflare function unavailable — works only when deployed)');
-                })
-                .catch(function(e) {
-                    var item = document.querySelector('[data-diag="ban-check"]');
-                    if (item) item.textContent = '❌ /api/ban-check unreachable: ' + e.message + ' (expected when running locally)';
-                });
-        } catch(e) {}
+    // Patch console ASAP — before any scripts run
+    ['log', 'warn', 'error', 'info', 'debug'].forEach(function(method) {
+        var orig = console[method].bind(console);
+        console[method] = function() {
+            orig.apply(console, arguments);
+            _pushLog(method === 'log' || method === 'info' || method === 'debug' ? 'log' : method, arguments);
+        };
+    });
 
-        // Render banner
-        var list = document.getElementById('diag-list');
-        _diagChecks.forEach(function(c) {
-            var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;';
-            row.innerHTML = (c.ok ? '<span style="color:#4ade80;flex-shrink:0">✅</span>' : '<span style="color:#f87171;flex-shrink:0">❌</span>') +
-                '<span><strong style="color:#cbd5e1">' + c.label + '</strong>' + (c.detail ? ' — ' + c.detail : '') + '</span>';
-            list.appendChild(row);
+    // Also capture uncaught errors
+    window.addEventListener('error', function(e) {
+        _pushLog('error', ['[uncaught] ' + e.message + (e.filename ? ' @ ' + e.filename + ':' + e.lineno : '')]);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        _pushLog('error', ['[unhandled promise] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))]);
+    });
+
+    function _copyLogs() {
+        var text = _logs.map(function(e) { return e.t + ' [' + e.level.toUpperCase() + '] ' + e.msg; }).join('\n');
+        navigator.clipboard.writeText(text).then(function() {
+            var btn = document.getElementById('siuu-diag-copy');
+            if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy Logs'; }, 2000); }
+        }).catch(function() {
+            // Fallback for browsers that block clipboard
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            var btn = document.getElementById('siuu-diag-copy');
+            if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy Logs'; }, 2000); }
         });
-        // Async ban-check row
-        var banRow = document.createElement('div');
-        banRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;';
-        banRow.setAttribute('data-diag', 'ban-check');
-        banRow.textContent = '⏳ /api/ban-check — checking…';
-        list.appendChild(banRow);
+    }
 
-        document.getElementById('diag-banner').style.display = 'block';
-    }, 8000);
+    function _toggleCollapse() {
+        if (!_logEl) return;
+        var collapsed = _logEl.style.display === 'none';
+        _logEl.style.display = collapsed ? 'block' : 'none';
+        var btn = document.getElementById('siuu-diag-toggle');
+        if (btn) btn.textContent = collapsed ? '▼' : '▶';
+    }
+
+    // Build the banner DOM after body is ready
+    function _buildBanner() {
+        var banner = document.createElement('div');
+        banner.id = 'siuu-diag-banner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#0f0a0a;border-top:2px solid #dc2626;font-family:ui-monospace,monospace;';
+
+        var header = document.createElement('div');
+        header.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 12px;background:#1a0808;border-bottom:1px solid rgba(220,38,38,0.4);';
+
+        var title = document.createElement('span');
+        title.style.cssText = 'color:#ef4444;font-size:11px;font-weight:700;letter-spacing:0.05em;flex:1;';
+        title.textContent = '🔴 SIUU DIAGNOSTIC';
+
+        var countEl = document.createElement('span');
+        countEl.id = 'siuu-diag-count';
+        countEl.style.cssText = 'color:#6b7280;font-size:10px;';
+        countEl.textContent = '0 entries';
+
+        var copyBtn = document.createElement('button');
+        copyBtn.id = 'siuu-diag-copy';
+        copyBtn.textContent = 'Copy Logs';
+        copyBtn.onclick = _copyLogs;
+        copyBtn.style.cssText = 'padding:3px 10px;background:#dc2626;color:#fff;border:none;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;';
+
+        var clearBtn = document.createElement('button');
+        clearBtn.textContent = 'Clear';
+        clearBtn.onclick = function() { _logs = []; if (_logEl) _logEl.innerHTML = ''; _updateCount(); };
+        clearBtn.style.cssText = 'padding:3px 10px;background:#374151;color:#9ca3af;border:none;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;';
+
+        var toggleBtn = document.createElement('button');
+        toggleBtn.id = 'siuu-diag-toggle';
+        toggleBtn.textContent = '▼';
+        toggleBtn.onclick = _toggleCollapse;
+        toggleBtn.style.cssText = 'padding:3px 8px;background:#374151;color:#9ca3af;border:none;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;';
+
+        header.appendChild(title);
+        header.appendChild(countEl);
+        header.appendChild(copyBtn);
+        header.appendChild(clearBtn);
+        header.appendChild(toggleBtn);
+
+        var logEl = document.createElement('div');
+        logEl.style.cssText = 'height:180px;overflow-y:auto;padding:6px 12px;';
+        _logEl = logEl;
+
+        // Render backlog of logs captured before banner was built
+        _logs.forEach(_renderEntry);
+        logEl.scrollTop = logEl.scrollHeight;
+
+        banner.appendChild(header);
+        banner.appendChild(logEl);
+        document.body.appendChild(banner);
+        _el = banner;
+
+        // Add bottom padding to body so content isn't hidden under banner
+        document.body.style.paddingBottom = '220px';
+    }
+
+    function _updateCount() {
+        var el = document.getElementById('siuu-diag-count');
+        if (el) el.textContent = _logs.length + ' entr' + (_logs.length === 1 ? 'y' : 'ies');
+    }
+
+    // Patch _pushLog to also update count after banner exists
+    var _origPush = _pushLog;
+    _pushLog = function(level, args) {
+        _origPush(level, args);
+        _updateCount();
+    };
+
+    // Build as soon as DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _buildBanner);
+    } else {
+        _buildBanner();
+    }
 })();
 </script>
 
