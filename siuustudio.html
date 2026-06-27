@@ -250,15 +250,7 @@
         return { data: { session: null } };
     });
 
-    // Sign-out helper — calls edge to clear the HttpOnly cookie, then Supabase
-    function siuuSignOut() {
-        return fetch('/api/session', {
-            method:      'DELETE',
-            credentials: 'same-origin',
-        }).then(function() {
-            return window._sb.auth.signOut();
-        });
-    }
+    // (sign-out is handled by window.siuuSignOut below)
 
     // Auth guard - register listener FIRST, then trigger bootstrap so we never
     // miss the SIGNED_IN event that setSession() fires.
@@ -315,9 +307,19 @@
     siuuAuthGuard();
 
 
-    // Sign-out: clear HttpOnly cookie at edge AND sign out from Supabase client
+    // Sign-out: clear HttpOnly cookie at edge, then redirect.
+    // We don't rely on _sb.auth.signOut() succeeding — the HttpOnly cookie
+    // deletion at the edge is what actually kills the session. Even if the
+    // Supabase client call fails (no active session in memory), the user is
+    // safely logged out because the cookie is gone.
     window.siuuSignOut = function() {
-        return siuuSignOut().then(function() {
+        return fetch('/api/session', {
+            method:      'DELETE',
+            credentials: 'same-origin',
+        }).catch(function() {
+            // swallow network errors — redirect regardless
+        }).then(function() {
+            try { window._sb.auth.signOut(); } catch(_) {}
             window.location.replace(AUTH_PAGE);
         });
     };
@@ -4166,14 +4168,23 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
         );
     };
 
-    try {
-        ReactDOM.createRoot(document.getElementById('root')).render(
-            <ToastProvider><StoreProvider><App /></StoreProvider></ToastProvider>
-        );
-    } catch(e) {
-        console.error('[app] CRASH during React mount: ' + e.message);
-        if (e.stack) console.error('[app] Stack: ' + String(e.stack).slice(0, 600));
-    }
+    // Wait for the edge session bootstrap before mounting React.
+    // This ensures window._sbUser is populated so useState(() => window._sbUser)
+    // gets the real user on first render — not null — preventing the "User" ghost state.
+    window._sessionBootstrap.then(function() {
+        try {
+            ReactDOM.createRoot(document.getElementById('root')).render(
+                React.createElement(ToastProvider, null,
+                    React.createElement(StoreProvider, null,
+                        React.createElement(App, null)
+                    )
+                )
+            );
+        } catch(e) {
+            console.error('[app] CRASH during React mount: ' + e.message);
+            if (e.stack) console.error('[app] Stack: ' + String(e.stack).slice(0, 600));
+        }
+    });
 </script>
 <script>
 if ("serviceWorker" in navigator) {
