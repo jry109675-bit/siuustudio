@@ -1050,12 +1050,26 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                 const push = (line) => { log.push(`[${ts()}] ${line}`); };
                 try {
                     push('warn-check started');
+
+                    // Wait briefly for Supabase to fully hydrate the session from
+                    // localStorage — without this the query can fire as anon (42501).
+                    await new Promise(r => setTimeout(r, 600));
+                    push('session hydration wait done');
+
+                    // getSession() first — ensures access token is attached
+                    const { data: { session }, error: sessErr } = await window._sb.auth.getSession();
+                    if (sessErr) { push(`getSession error: ${sessErr.message}`); setWarnDiag(log); return; }
+                    if (!session) { push('getSession: no session'); setWarnDiag(log); return; }
+                    push(`session ok, access_token: ${session.access_token ? session.access_token.slice(0,12) + '…' : 'MISSING'}`);
+
                     const { data: { user }, error: userErr } = await window._sb.auth.getUser();
                     if (userErr) { push(`getUser error: ${userErr.message}`); setWarnDiag(log); return; }
-                    if (!user)   { push('getUser: no user session'); setWarnDiag(log); return; }
+                    if (!user)   { push('getUser: no user'); setWarnDiag(log); return; }
                     push(`user: ${user.email} (${user.id.slice(0,8)}…)`);
                     const acked = user.user_metadata?.acknowledged_warnings ?? [];
                     push(`acked IDs in metadata: [${acked.join(', ')}]`);
+
+                    // Build an authenticated client using the live session token
                     const { data: warnings, error: warnErr } = await window._sb
                         .from('warnings')
                         .select('id, message, created_at')
