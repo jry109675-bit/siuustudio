@@ -1762,7 +1762,29 @@ STRATEGY TIP: [One key strategic tip for this niche]`;
                             className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white font-semibold font-display">
                             {acknowledging ? 'Saving\u2026' : 'Acknowledge & Continue'}
                         </button>
-                    </div>;
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // ─── Ban Screen (full-screen takeover when user is banned) ───────────────────
+    const BanScreen = () => {
+        const { banInfo, setBanInfo } = useStore();
+        const { setLegalModal } = useStore();
+        const [agreed, setAgreed] = useState(false);
+        const [reactivating, setReactivating] = useState(false);
+
+        if (!banInfo) return null;
+
+        const lifted = !!banInfo.lifted;
+        const banKey = banInfo.ban_reactivated_for || banInfo.tier;
+        const expiresText = banInfo.expires_at ? new Date(banInfo.expires_at).toLocaleString() : null;
+
+        const handleReactivate = async () => {
+            if (!agreed) return;
+            setReactivating(true);
+            try {
                 if (window._sbUser) {
                     window._sbUser.user_metadata = {
                         ...(window._sbUser.user_metadata ?? {}),
