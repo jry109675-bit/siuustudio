@@ -2,11 +2,17 @@
 // Cloudflare Pages Function — NVIDIA NIM API proxy
 // Mapped automatically to /api/nvidia by Cloudflare Pages
 
+import { requireAuth } from './_auth.js';
+
 const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL  = 'qwen/qwen3.5-397b-a17b';
 
 export async function onRequestPost(context) {
     const { request, env } = context;
+
+    // Reject unauthenticated or banned callers before touching the API key
+    const deny = await requireAuth(context);
+    if (deny) return deny;
 
     const apiKey = env.NVIDIA_API_KEY;
     if (!apiKey) {
@@ -78,7 +84,7 @@ function corsHeaders() {
     return {
         'Access-Control-Allow-Origin':  '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 }
 
