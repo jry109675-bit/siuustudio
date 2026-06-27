@@ -1535,15 +1535,32 @@ async function handleForgotPassword() {
 
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Auth state listener - auto-redirect if already logged in
+//  Auth state listener - handles post-sign-in events on this page
 // ────────────────────────────────────────────────────────────────────────────
 sb.auth.onAuthStateChange((event, session) => {
     if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         checkAndShowLegalModals(session);
-    } else if (!session && event === 'INITIAL_SESSION') {
     } else if (event === 'SIGNED_OUT') {
     }
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Already signed in? Redirect immediately to the app.
+//  With the HttpOnly cookie flow, the Supabase client has no session in memory,
+//  so we check /api/session directly instead of relying on onAuthStateChange.
+// ────────────────────────────────────────────────────────────────────────────
+(function() {
+    fetch('/api/session', { method: 'GET', credentials: 'same-origin' })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.session && data.session.access_token) {
+                window.location.replace(APP_URL);
+            }
+        })
+        .catch(function() {
+            // Network error — stay on auth page, user can sign in normally
+        });
+})();
 
 // Store default button labels for the spinner swap
 document.getElementById('login-btn-text').dataset.default  = 'Sign In';
